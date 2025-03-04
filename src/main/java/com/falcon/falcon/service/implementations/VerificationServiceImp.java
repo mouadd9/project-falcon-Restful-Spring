@@ -1,6 +1,10 @@
 package com.falcon.falcon.service.implementations;
 
+import com.falcon.falcon.DTOs.SignUpRequest;
 import com.falcon.falcon.DTOs.VerificationEntry;
+import com.falcon.falcon.exceptions.CodeExpiredException;
+import com.falcon.falcon.exceptions.EmaiNotVerifiedOrRequestIdNotValid;
+import com.falcon.falcon.exceptions.VerificationCodeInvalid;
 import com.falcon.falcon.service.interfaces.VerificationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -55,6 +59,44 @@ public class VerificationServiceImp implements VerificationService {
         return new VerificationEntry(requestId, email, verificationCode, expiryDateStr);
     }
 
+    public void validateVerificationCodeAgainstRedis(SignUpRequest signUpRequest) throws CodeExpiredException, VerificationCodeInvalid, EmaiNotVerifiedOrRequestIdNotValid   {
+       // we need to retrieve an entry from redis using the requestId
+        // and check if the entry exists
+        VerificationEntry storedVerificationEntry = (VerificationEntry) this.redisTemplate.opsForValue().get("verification:" + signUpRequest.getRequestId());
+        if (storedVerificationEntry != null) {
+            // now after that we checked that the requestId is for a non expired code
+            // we will check if the email used in the SignUp request is the same one that received the Code
+            String storedRequestId = (String) this.redisTemplate.opsForValue().get("verification:email:" + signUpRequest.getEmail());
+            if ((storedRequestId != null) && (storedRequestId.equals(storedVerificationEntry.getRequestId()))) {
+                // this means that the email used to sign up is present and the request corresponds
+                // now we will check if the verification code is the same as the one stored in the verification entry
+                System.out.println("###########################");
+                System.out.println("###########################");
+                System.out.println("###########################");
+                System.out.println("###########################");
+                System.out.println("###########################");
+                System.out.println(storedVerificationEntry.getVerificationCode());
+                System.out.println("###########################");
+                System.out.println("###########################");
+                System.out.println("###########################");
+                System.out.println("###########################");
+                System.out.println("###########################");
+                if (signUpRequest.getCode().equals(storedVerificationEntry.getVerificationCode())) { // here we will check if the code sent is true !
+                } else {
+                    // here we generate a wrong code error
+                    throw new VerificationCodeInvalid("verifiaction code invalid");
+                }
+            } else {
+                // this means either the email used to complete registration was never verified
+                // or the requestId generated with this email is not the same as the one you sent
+                throw new EmaiNotVerifiedOrRequestIdNotValid("Email used for sign up not verified or the request id doesn't correspond to the email");
+            }
+
+        } else {
+            throw new CodeExpiredException("code expired for request: " + signUpRequest.getRequestId());
+        }
+
+    }
     // this will write entries to Redis
     // we use the requestId as key
     public void storeRequest(VerificationEntry entry) {

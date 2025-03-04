@@ -1,11 +1,10 @@
 package com.falcon.falcon.service.implementations;
 
 import com.falcon.falcon.DTOs.*;
-import com.falcon.falcon.exception.UserAlreadyExistsException;
-import com.falcon.falcon.service.interfaces.AuthService;
-import com.falcon.falcon.service.interfaces.EmailService;
-import com.falcon.falcon.service.interfaces.UserService;
-import com.falcon.falcon.service.interfaces.VerificationService;
+import com.falcon.falcon.exceptions.UserAlreadyExistsException;
+import com.falcon.falcon.model.User;
+import com.falcon.falcon.service.interfaces.*;
+import org.antlr.v4.runtime.Token;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,10 +12,12 @@ public class AuthServiceImp implements AuthService {
     private UserService userService;
     private EmailService emailService;
     private VerificationService verificationService;
-    public AuthServiceImp(UserService userService, EmailService emailService, VerificationService verificationService) {
+    private TokenService tokenService;
+    public AuthServiceImp(UserService userService, EmailService emailService, VerificationService verificationService, TokenService tokenService) {
         this.userService = userService;
         this.emailService = emailService;
         this.verificationService = verificationService;
+        this.tokenService = tokenService;
     }
     // this method will be used to check if the email to verify isnt taken.
     // then it generates a request ID a verification code and stores everything in Redis
@@ -39,10 +40,27 @@ public class AuthServiceImp implements AuthService {
 
     @Override
     public SignUpResponse completeRegistration(SignUpRequest request) {
-        // this.verificationService.validateVerificationCode(request);  if not valid (code expired, email mismatch, wrong code) we generate exception
-        // this.userService.createUser(request); registersc the user
-        // this.jwtService() generates a token
+        // Validate the verification code
+        verificationService.validateVerificationCodeAgainstRedis(request); // this generates exceptions related to
+        // Create the user
+        UserDTO userDTO = new UserDTO();
+        userDTO.setEmail(request.getEmail());
+        userDTO.setUsername(request.getUsername());
+        userDTO.setPassword(request.getPassword());
+
+        // Save the user (this now includes roles in the UserDTO)
+        UserDTO createdUser = userService.createUser(userDTO); // this should generate exceptions related to user creation
+
+        // Generate a JWT token using the TokenService
+        String jwt = tokenService.generateToken(
+                createdUser.getUsername(), // Subject (e.g., username)
+                createdUser.getRoles()     // Roles from the UserDTO
+        );
+
+        // Build the response
         SignUpResponse signUpResponse = new SignUpResponse();
+        signUpResponse.setJwt(jwt);
+        // Add more user details if needed
         return signUpResponse;
     }
 }

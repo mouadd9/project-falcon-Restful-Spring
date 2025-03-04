@@ -25,23 +25,24 @@ public class AuthController {
         String jwt = "test";
         return jwt;
     }
-    @GetMapping("/test")
-    public String test() {
-        return "Test successful";
-    }
+
     @PostMapping("/verification-codes")
     public ResponseEntity<VerificationCodeResponse> sendVerificationCode(@RequestBody VerificationCodeRequest verificationCodeRequest) {
-        System.out.println("####################################");
-        System.out.println("####################################");
-        System.out.println("####################################");
-        System.out.println("####################################");
         VerificationCodeResponse verificationCodeResponse = this.authService.requestVerificationCode(verificationCodeRequest);
         return new ResponseEntity<>(verificationCodeResponse, HttpStatus.CREATED);
     }
 
+    // POST /auth/signup
+    /*{
+       requestId,
+       code,
+       email,
+       username,
+       password
+    }*/
     @PostMapping("/signup")
-    public SignUpResponse signup(@RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<SignUpResponse> signup(@RequestBody SignUpRequest signUpRequest) {
         SignUpResponse signUpResponse = this.authService.completeRegistration(signUpRequest);
-        return signUpResponse;
+        return new ResponseEntity<>(signUpResponse, HttpStatus.CREATED);
     }
 }

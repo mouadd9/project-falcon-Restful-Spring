@@ -36,5 +36,4 @@ build/
 src/main/resources/keys/
 
 # Environment variables
-environments/.env
-environments/.env.docker
+.env

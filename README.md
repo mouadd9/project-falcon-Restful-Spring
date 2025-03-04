@@ -29,15 +29,6 @@ This guide explains how to set up and configure the environment variables for bo
 
 ---
 
-### For Docker Compose Configuration
-1. Copy the `.env.docker.template` file to a new file named `.env.docker`:
-   ```bash
-   cp .env.docker.template .env.docker
-   ```
-
-2. Open the `.env.docker` file in a text editor and fill in the required values for Docker Compose.
-
----
 
 ## Step 2: Configure Environment Variables
 
@@ -113,17 +104,6 @@ JWT_PUBLIC_KEY=classpath:keys/public.pem
 JWT_PRIVATE_KEY=classpath:keys/private.pem
 ```
 
----
-
-### Docker Compose Configuration (`.env.docker`)
-#### MySQL Configuration
-- **`MYSQL_ROOT_PASSWORD`**: Set a strong password for the MySQL root user.
-- **`MYSQL_PASSWORD`**: Set a password for the MySQL user.
-- **`MYSQL_USER`**: Set the username for the MySQL database.
-- **`MYSQL_DATABASE`**: Set the name of the MySQL database.
-
-an account from here should be used by the Spring app to connect to the Database
-so in the application.properties be sure to put correct credentials.
 ---
 
 ## Step 3: Run the Application with Docker Compose

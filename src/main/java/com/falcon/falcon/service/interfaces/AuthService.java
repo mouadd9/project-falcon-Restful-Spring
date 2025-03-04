@@ -4,7 +4,7 @@ import com.falcon.falcon.DTOs.SignUpRequest;
 import com.falcon.falcon.DTOs.SignUpResponse;
 import com.falcon.falcon.DTOs.VerificationCodeRequest;
 import com.falcon.falcon.DTOs.VerificationCodeResponse;
-import com.falcon.falcon.exception.UserAlreadyExistsException;
+import com.falcon.falcon.exceptions.UserAlreadyExistsException;
 
 // the main entry point
 // responsible for orchestrating the flows between more specialized services.

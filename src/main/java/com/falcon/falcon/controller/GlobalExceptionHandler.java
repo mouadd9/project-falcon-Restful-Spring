@@ -1,7 +1,7 @@
 package com.falcon.falcon.controller;
 
 import com.falcon.falcon.DTOs.ErrorResponse;
-import com.falcon.falcon.exception.UserAlreadyExistsException;
+import com.falcon.falcon.exceptions.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,5 +28,57 @@ public class GlobalExceptionHandler {
         );
         // ResponseEntity represents an HTTP response : status code and body
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    // Handler for CodeExpiredException
+    @ExceptionHandler(CodeExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleCodeExpiredException(
+            CodeExpiredException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request: Code expired",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // Handler for VerificationCodeInvalid
+    @ExceptionHandler(VerificationCodeInvalid.class)
+    public ResponseEntity<ErrorResponse> handleVerificationCodeInvalid(
+            VerificationCodeInvalid ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request: Invalid verification code",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // Handler for EmaiNotVerifiedOrRequestIdNotValid (note the typo in the exception name)
+    @ExceptionHandler(EmaiNotVerifiedOrRequestIdNotValid.class)
+    public ResponseEntity<ErrorResponse> handleEmailNotVerifiedOrRequestIdNotValid(
+            EmaiNotVerifiedOrRequestIdNotValid ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request: Email or Request ID invalid",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // Handler for RoleNotFoundException
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRoleNotFoundException(
+            RoleNotFoundException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error: Role not found",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
