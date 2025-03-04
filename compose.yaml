@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: 'mysql:8.0'
+    container_name: spring_mysql
+    # env variables to configure mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}  # Use env vars
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    # binding port 3306 of the container to port 3306 of the machine
+    ports:
+      - "3306:3306"
+    # a volume persists data into a docker managed directory located in the host machine
+    # now if we destroy our container the data in /var/lib/mysql will be persisted in the host machine (volumes)
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - spring_network  # Connect this container to the defined network
+
+  # this service is an in-memory data store
+  # it stores data in RAM for fast access
+  # redis supports advances data structures like Strings, lists, sets ...
+  # mainly used for caching, session storage, message brokering and real-time analytics.
+  # caching is the process of storing frequently accessed data in a fast-access storage layer to reduce the load on slower backend systems.
+  # Redis supports expiration policies, so caches data can automatically expire after a certain time.
+  # Redis is great for message brokering, it supports pub/sub, a messaging pattern where publishers send messages to channels, and subscribers receive messages from those channels.
+  # Redis supports streams, which is ideal for building message queues.
+  redis:
+    image: 'redis:latest'
+    ports:
+      - "6379:6379"  # Explicit port mapping
+
+# This section defines the named volumes used above
+volumes:
+  mysql_data:  # This corresponds to 'mysql_data' used in the volumes section above
+    name: spring_mysql_data  # Optional: gives a specific name to the volume outside compose
+
+# Creates a custom network for containers to communicate
+networks:
+  spring_network:
+    name: spring_network
+    driver: bridge  # Standard network driver for container communication
