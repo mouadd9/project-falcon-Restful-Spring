@@ -33,7 +33,7 @@ public class UserServiceImp implements UserService {
 
     public void validateEmailNotExists(String email) throws UserAlreadyExistsException {
         this.userRepository.findByEmail(email).ifPresent(u -> {
-            throw new UserAlreadyExistsException("User with email " + u.getEmail() + " already exists");
+            throw new UserAlreadyExistsException("An account with this email already exists");
         });
     }
 

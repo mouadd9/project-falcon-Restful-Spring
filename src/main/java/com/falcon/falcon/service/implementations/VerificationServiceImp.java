@@ -38,10 +38,6 @@ public class VerificationServiceImp implements VerificationService {
             // Retrieve the existing entry
             VerificationEntry existingEntry = (VerificationEntry) redisTemplate.opsForValue().get("verification:" + existingRequestId);
             if (existingEntry != null) {
-                // Debug logging
-                System.out.println("Retrieved existing entry: " + existingEntry.getRequestId());
-                System.out.println("Code: " + existingEntry.getVerificationCode());
-                System.out.println("Expiry: " + existingEntry.getExpiryDate());
                 // Return the existing entry instead of creating a new one
                 return existingEntry;
             }
@@ -69,22 +65,11 @@ public class VerificationServiceImp implements VerificationService {
             String storedRequestId = (String) this.redisTemplate.opsForValue().get("verification:email:" + signUpRequest.getEmail());
             if ((storedRequestId != null) && (storedRequestId.equals(storedVerificationEntry.getRequestId()))) {
                 // this means that the email used to sign up is present and the request corresponds
-                // now we will check if the verification code is the same as the one stored in the verification entry
-                System.out.println("###########################");
-                System.out.println("###########################");
-                System.out.println("###########################");
-                System.out.println("###########################");
-                System.out.println("###########################");
-                System.out.println(storedVerificationEntry.getVerificationCode());
-                System.out.println("###########################");
-                System.out.println("###########################");
-                System.out.println("###########################");
-                System.out.println("###########################");
-                System.out.println("###########################");
+                // now we will check if the verification code is the same as the one stored in the verification entr
                 if (signUpRequest.getCode().equals(storedVerificationEntry.getVerificationCode())) { // here we will check if the code sent is true !
                 } else {
                     // here we generate a wrong code error
-                    throw new VerificationCodeInvalid("verifiaction code invalid");
+                    throw new VerificationCodeInvalid("invalid verification code");
                 }
             } else {
                 // this means either the email used to complete registration was never verified
@@ -93,7 +78,7 @@ public class VerificationServiceImp implements VerificationService {
             }
 
         } else {
-            throw new CodeExpiredException("code expired for request: " + signUpRequest.getRequestId());
+            throw new CodeExpiredException("Code expired or wrong Request id");
         }
 
     }

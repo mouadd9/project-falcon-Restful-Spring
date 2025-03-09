@@ -1,10 +1,13 @@
 package com.falcon.falcon.service.interfaces;
 
 import com.falcon.falcon.DTOs.SignUpRequest;
-import com.falcon.falcon.DTOs.SignUpResponse;
+import com.falcon.falcon.DTOs.UserDTO;
 import com.falcon.falcon.DTOs.VerificationCodeRequest;
 import com.falcon.falcon.DTOs.VerificationCodeResponse;
 import com.falcon.falcon.exceptions.UserAlreadyExistsException;
+import org.springframework.security.core.Authentication;
+
+import java.util.Map;
 
 // the main entry point
 // responsible for orchestrating the flows between more specialized services.
@@ -20,7 +23,7 @@ public interface AuthService {
       // completeRegistration ----(Validate code)----> VerificationService
       // completeRegistration ----(create user)----> UserService
       // completeRegistration ----(generate jwt)----> jwt service
-    SignUpResponse completeRegistration(SignUpRequest request);
+    UserDTO completeRegistration(SignUpRequest request);
 
-
+    Map<String, String> generateAccessToken(Authentication result);
 }

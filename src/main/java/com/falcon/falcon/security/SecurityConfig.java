@@ -1,5 +1,6 @@
 package com.falcon.falcon.security;
 
+import com.falcon.falcon.service.implementations.CustomUserDetailsService;
 import org.springframework.core.io.Resource;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.openssl.PEMParser;
@@ -7,6 +8,9 @@ import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,7 +19,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -30,33 +33,19 @@ import java.security.interfaces.RSAPublicKey;
 // we aldo provide a decoder bean that uses the public key to verify if requests are valid. this bean is used by the OAuth2 resource server validator to check the validity of access-tokens
 @Configuration
 @EnableWebSecurity // this annotation triggers the configuration of Spring Security's web infrastructure and creates a security filter chain.
-public class ResourceServerConfig {
-    // this public key is a bean defined in the properties file
-    // it will be used be the jwt decoder to check if the jwt is valid.
-    private final RSAPublicKey publicKey;
+public class SecurityConfig {
 
-    // the public key bean is in a pem format so we need to convert it from pem to a java RSAPublicKey object
-    // we need a PEM parser this parser does the following :
-      // - reads the PEM file, which usually has extensions like .pem
-      // - The content of a PEM file is encoded in base64 and enclosed between -----BEGIN and -----END headers (e.g., -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----). The parser decodes this base64 content into its binary form.
-      // - The parser extracts the actual data, such as an X.509 certificate, an RSA private key, or other cryptographic objects, from the decoded binary.
-    public ResourceServerConfig(@Value("${jwt.public.key}") Resource publicKeyResource) throws Exception {
-        // the idea here is, we usually store keys in pem files, so we need a way to convert data in those files into readable characters
-        // because those readable characters will be parsed by a pem parser
-        // so we will do the following :
-        //   - Open the resource as an InputStream. (.getInputStream())
-        //   - Converts the byte stream into a character stream using InputStreamReader.
-        //   - Allows the program to read the PEM content as text using the Reader object.
-        try (Reader publicKeyReader = new InputStreamReader(publicKeyResource.getInputStream())) { //  here we convert raw bytes into characters using a specified character encoding (e.g., UTF-8, ASCII).
-            // now we will parse the PEM
-            PEMParser pemParser = new PEMParser(publicKeyReader);
-            JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
-            SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) pemParser.readObject();
-            this.publicKey = (RSAPublicKey) converter.getPublicKey(publicKeyInfo);
-        }
+    private final JwtDecoder jwtDecoder; // this will be used by the security filter chain to decode and validate access-token
+    private final CustomUserDetailsService customUserDetailsService; // this will be used by teh authentication provider to load a user by username
+
+    public SecurityConfig(JwtDecoder jwtDecoder, CustomUserDetailsService customUserDetailsService) {
+        this.jwtDecoder = jwtDecoder;
+        this.customUserDetailsService = customUserDetailsService;
     }
+
     // this method will return a bean that will be managed by the IoC
-    @Bean // The SecurityFilterChain bean is used to configure the security filter chain for HTTP requests. (the filter chain is a middleware that validates http requests)
+    // The SecurityFilterChain bean is used to configure the security filter chain for HTTP requests. (the filter chain is a middleware that validates http requests)
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http     // this configures spring security not to create server side sessions for Http requests (by default spring security creates sessions upon receiving Http requests)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -75,35 +64,35 @@ public class ResourceServerConfig {
                     ar.anyRequest().authenticated();
                     System.out.println("Security configuration applied: /auth/** is permitted");
                 })
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())));
-
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder)));
         return http.build();
     }
 
-    // asymmetric algorithm
-    // When using RSA keys for JWT validation, the decoder only needs the public key to verify if a token is valid.
-    // we will use the public key we injected and parsed.
     @Bean
-    public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withPublicKey(this.publicKey).build();
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){ // 2
-        return new BCryptPasswordEncoder();
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(customUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder()); // this will be used to hash the password and compare it with the hashed one.
+        return new ProviderManager(provider);
     }
+
+
+
+
+
 
     // handling requests coming from browsers with CORS
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
-
-
         /*Cross-Origin Resource Sharing (CORS) is a security
          feature that allows browser-based requests using AJAX.
          CORS helps keep web interactions secure while allowing
          necessary communication between different websites.*/
-
-
         CorsConfiguration corsConfiguration = new CorsConfiguration(); // a class provided by Spring that holds the CORS configuration settings
         // we will allow all origins to access our apis
         corsConfiguration.addAllowedOrigin("*");

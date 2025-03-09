@@ -2,10 +2,12 @@ package com.falcon.falcon.service.implementations;
 
 import com.falcon.falcon.DTOs.*;
 import com.falcon.falcon.exceptions.UserAlreadyExistsException;
-import com.falcon.falcon.model.User;
 import com.falcon.falcon.service.interfaces.*;
-import org.antlr.v4.runtime.Token;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Service
 public class AuthServiceImp implements AuthService {
@@ -13,6 +15,7 @@ public class AuthServiceImp implements AuthService {
     private EmailService emailService;
     private VerificationService verificationService;
     private TokenService tokenService;
+
     public AuthServiceImp(UserService userService, EmailService emailService, VerificationService verificationService, TokenService tokenService) {
         this.userService = userService;
         this.emailService = emailService;
@@ -39,7 +42,7 @@ public class AuthServiceImp implements AuthService {
     }
 
     @Override
-    public SignUpResponse completeRegistration(SignUpRequest request) {
+    public UserDTO completeRegistration(SignUpRequest request) {
         // Validate the verification code
         verificationService.validateVerificationCodeAgainstRedis(request); // this generates exceptions related to
         // Create the user
@@ -50,17 +53,11 @@ public class AuthServiceImp implements AuthService {
 
         // Save the user (this now includes roles in the UserDTO)
         UserDTO createdUser = userService.createUser(userDTO); // this should generate exceptions related to user creation
+        return createdUser;
+    }
 
-        // Generate a JWT token using the TokenService
-        String jwt = tokenService.generateToken(
-                createdUser.getUsername(), // Subject (e.g., username)
-                createdUser.getRoles()     // Roles from the UserDTO
-        );
-
-        // Build the response
-        SignUpResponse signUpResponse = new SignUpResponse();
-        signUpResponse.setJwt(jwt);
-        // Add more user details if needed
-        return signUpResponse;
+    @Override
+    public Map<String, String> generateAccessToken(Authentication authentication) {
+        return this.tokenService.generateToken(authentication.getName(), authentication.getAuthorities());
     }
 }

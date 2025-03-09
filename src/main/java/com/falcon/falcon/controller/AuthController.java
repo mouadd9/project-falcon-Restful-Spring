@@ -4,7 +4,12 @@ import com.falcon.falcon.DTOs.*;
 import com.falcon.falcon.service.interfaces.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 // this controller will cover auth related endpoints
 // POST /auth/login application/json Credentials
@@ -14,16 +19,37 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+
     private AuthService authService;
-    public AuthController(AuthService authService) {
+    private AuthenticationManager authenticationManager;
+
+
+    public AuthController(AuthService authService, AuthenticationManager authenticationManager) {
         this.authService = authService;
+        // Type:  Interface (often implemented by ProviderManager)
+        // Purpose: Manages the authentication process
+        // Scope: High-level, delegates to providers ( providers are Low-level they do the actual authentication against a database)
+        // Responsibility: Authentication Managers Decide Who authenticates (Authentication Providers Decide How to authenticate)
+        this.authenticationManager = authenticationManager;
     }
+
+    // login will authenticate the user and issue a jwt
+    // we will inject an authentication service.
+    // and we will inject a jwt generator service here.
+
     @PostMapping("/login")
-    public String login(@RequestBody Credentials credentials) {
-        // here we will use Spring security to authenticate the user
-        // we will either return JWT or an HTTP error response
-        String jwt = "test";
-        return jwt;
+    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest credentials) {
+        // we create an authentication token
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                credentials.getUsername(),
+                credentials.getPassword()
+        );
+        // we Authenticate with AuthenticationManager (that uses an Authentication provider in our case DaoAuthenticationProvider)
+        Authentication result = authenticationManager.authenticate(authentication);
+
+        // Set the authenticated user in the SecurityContext (optional for API)
+        // SecurityContextHolder.getContext().setAuthentication(result);
+        return new ResponseEntity<>(authService.generateAccessToken(result), HttpStatus.OK);
     }
 
     @PostMapping("/verification-codes")
@@ -33,16 +59,18 @@ public class AuthController {
     }
 
     // POST /auth/signup
-    /*{
-       requestId,
-       code,
-       email,
-       username,
-       password
-    }*/
     @PostMapping("/signup")
-    public ResponseEntity<SignUpResponse> signup(@RequestBody SignUpRequest signUpRequest) {
-        SignUpResponse signUpResponse = this.authService.completeRegistration(signUpRequest);
-        return new ResponseEntity<>(signUpResponse, HttpStatus.CREATED);
+    public ResponseEntity<Map<String, String>> signup(@RequestBody SignUpRequest signUpRequest) {
+        // verify request --> save new user
+        UserDTO savedUser = this.authService.completeRegistration(signUpRequest);
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                signUpRequest.getUsername(),
+                signUpRequest.getPassword()
+        );
+        // authenticate user
+        Authentication result = authenticationManager.authenticate(authentication);
+
+        return new ResponseEntity<>(authService.generateAccessToken(result), HttpStatus.CREATED);
     }
 }

@@ -1,6 +1,9 @@
 package com.falcon.falcon.DTOs;
 
-public class Credentials {
+import lombok.Data;
+
+@Data
+public class LoginRequest {
     String username;
     String password;
 }

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.security.core.AuthenticationException;
 
 // Marks the class as a global exception handler specifically for REST controllers
 // Combines @ControllerAdvice and @ResponseBody
@@ -21,10 +22,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(UserAlreadyExistsException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                "confilct: email taken",
-                ex.getMessage(),
-                request.getDescription(false)
+                      HttpStatus.CONFLICT.value(), // 409
+                "USER_ALREADY_EXISTS",
+                      ex.getMessage(), // An account with this email already exists
+                      request.getDescription(false)
         );
         // ResponseEntity represents an HTTP response : status code and body
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
@@ -32,11 +33,10 @@ public class GlobalExceptionHandler {
 
     // Handler for CodeExpiredException
     @ExceptionHandler(CodeExpiredException.class)
-    public ResponseEntity<ErrorResponse> handleCodeExpiredException(
-            CodeExpiredException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleCodeExpiredException(CodeExpiredException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Bad Request: Code expired",
+                HttpStatus.BAD_REQUEST.value(), // 400
+                "CODE_EXPIRED_OR_WRONG_REQUEST",
                 ex.getMessage(),
                 request.getDescription(false)
         );
@@ -45,11 +45,10 @@ public class GlobalExceptionHandler {
 
     // Handler for VerificationCodeInvalid
     @ExceptionHandler(VerificationCodeInvalid.class)
-    public ResponseEntity<ErrorResponse> handleVerificationCodeInvalid(
-            VerificationCodeInvalid ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleVerificationCodeInvalid(VerificationCodeInvalid ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Bad Request: Invalid verification code",
+                HttpStatus.BAD_REQUEST.value(), // 409
+                "INVALID_CODE",
                 ex.getMessage(),
                 request.getDescription(false)
         );
@@ -58,11 +57,10 @@ public class GlobalExceptionHandler {
 
     // Handler for EmaiNotVerifiedOrRequestIdNotValid (note the typo in the exception name)
     @ExceptionHandler(EmaiNotVerifiedOrRequestIdNotValid.class)
-    public ResponseEntity<ErrorResponse> handleEmailNotVerifiedOrRequestIdNotValid(
-            EmaiNotVerifiedOrRequestIdNotValid ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleEmailNotVerifiedOrRequestIdNotValid(EmaiNotVerifiedOrRequestIdNotValid ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Bad Request: Email or Request ID invalid",
+                "EMAIL_REQUEST_MISMATCH",
                 ex.getMessage(),
                 request.getDescription(false)
         );
@@ -71,8 +69,7 @@ public class GlobalExceptionHandler {
 
     // Handler for RoleNotFoundException
     @ExceptionHandler(RoleNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleRoleNotFoundException(
-            RoleNotFoundException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleRoleNotFoundException(RoleNotFoundException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error: Role not found",
@@ -81,4 +78,35 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    // AuthenticationException
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex, WebRequest request) {
+       // String errorCode;
+        // Determine specific error code based on the type of AuthenticationException
+        /*if (ex instanceof BadCredentialsException) {
+            errorCode = "INVALID_CREDENTIALS";
+        } else if (ex instanceof LockedException) {
+            errorCode = "ACCOUNT_LOCKED";
+        } else if (ex instanceof DisabledException) {
+            errorCode = "ACCOUNT_DISABLED";
+        } else if (ex instanceof AccountExpiredException) {
+            errorCode = "ACCOUNT_EXPIRED";
+        } else {
+            errorCode = "AUTHENTICATION_FAILED";
+        }*/
+
+        // Create the error response object
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(), // 401
+                "AUTHENTICATION_FAILED",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+
+        // Return the ResponseEntity with the error response and HTTP 401 status
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+
 }

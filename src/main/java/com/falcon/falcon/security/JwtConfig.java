@@ -14,39 +14,38 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.jwt.*;
 
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Map;
 
-// this class provides an object that encodes JWT
-// it will be used to create JWTs
+// this class provide objects that encode and decode JWT tokens
+// we inject RSA keys and parse them so they can be used to sign tokens by the encoder and to verify signatures by the decoder
 @Configuration
-public class JwtConfiguration {
+public class JwtConfig {
     private final RSAPrivateKey privateKey;
     private final RSAPublicKey publicKey;
 
+    // the public key bean is in a pem format so we need to convert it from pem to a java RSAPublicKey object
+    // we need a PEM parser this parser does the following :
+    // - reads the PEM file, which usually has extensions like .pem
+    // - The content of a PEM file is encoded in base64 and enclosed between -----BEGIN and -----END headers (e.g., -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----). The parser decodes this base64 content into its binary form.
+    // - The parser extracts the actual data, such as an X.509 certificate, an RSA private key, or other cryptographic objects, from the decoded binary.
     // the constructor loads both the private and public .pem files and convert them to characters then it parses them and stores them in our local properties
-    public JwtConfiguration(@Value("${jwt.private.key}") Resource privateKeyResource,
-                            @Value("${jwt.public.key}") Resource publicKeyResource) throws Exception {
-        try (Reader privateKeyReader = new InputStreamReader(privateKeyResource.getInputStream());
-             Reader publicKeyReader = new InputStreamReader(publicKeyResource.getInputStream())) {
+    public JwtConfig(@Value("${jwt.private.key}") Resource privateKeyResource,
+                     @Value("${jwt.public.key}") Resource publicKeyResource) throws Exception {
 
+        try (Reader privateKeyReader = new InputStreamReader(privateKeyResource.getInputStream());
+             Reader publicKeyReader = new InputStreamReader(publicKeyResource.getInputStream())
+        ) {
+            JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
             // Load private key
             PEMParser pemParser = new PEMParser(privateKeyReader);
-            JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
             PrivateKeyInfo privateKeyInfo = (PrivateKeyInfo) pemParser.readObject();
             this.privateKey = (RSAPrivateKey) converter.getPrivateKey(privateKeyInfo);
             pemParser.close();
-
             // Load public key
             pemParser = new PEMParser(publicKeyReader);
             SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) pemParser.readObject();
@@ -64,5 +63,14 @@ public class JwtConfiguration {
         JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(new JWKSet(jwk));
         return new NimbusJwtEncoder(jwkSource);
     }
+
+    // asymmetric algorithm
+    // When using RSA keys for JWT validation, the decoder only needs the public key to verify if a token is valid.
+    // we will use the public key we injected and parsed.
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        return NimbusJwtDecoder.withPublicKey(this.publicKey).build();
+    }
+
 
 }
