@@ -1,0 +1,2 @@
+- when we persist a new room the AMIid is set to null !!
+- when we join a room for the first time isSaved is not set to false !!

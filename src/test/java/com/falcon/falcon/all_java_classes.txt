@@ -1,0 +1,17 @@
+=== Java Classes in src/test/java/com/falcon/falcon ===
+
+
+=== File: FalconApplicationTests.java ===
+package com.falcon.falcon;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class FalconApplicationTests {
+/*
+	@Test
+	void contextLoads() {
+	}
+*/
+}

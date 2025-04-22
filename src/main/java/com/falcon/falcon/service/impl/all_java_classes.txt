@@ -1,0 +1,659 @@
+=== Java Classes in src/main/java/com/falcon/falcon/service/impl ===
+
+
+=== File: AuthServiceImp.java ===
+package com.falcon.falcon.service.impl;
+
+import com.falcon.falcon.dto.*;
+import com.falcon.falcon.exceptions.userExceptions.UserAlreadyExistsException;
+import com.falcon.falcon.service.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+
+@Service
+public class AuthServiceImp implements AuthService {
+    private UserService userService;
+    private EmailService emailService;
+    private VerificationService verificationService;
+    private TokenService tokenService;
+
+    public AuthServiceImp(UserService userService, EmailService emailService, VerificationService verificationService, TokenService tokenService) {
+        this.userService = userService;
+        this.emailService = emailService;
+        this.verificationService = verificationService;
+        this.tokenService = tokenService;
+    }
+    // this method will be used to check if the email to verify isnt taken.
+    // then it generates a request ID a verification code and stores everything in Redis
+    // then it sends an email with the code
+    @Override
+    public VerificationCodeResponse requestVerificationCode(VerificationCodeRequest request) throws UserAlreadyExistsException {
+        // Validate email doesn't exist
+        this.userService.validateEmailNotExists(request.getEmail());
+        // Generate verification entry
+        VerificationEntry entry = this.verificationService.generateVerificationEntry(request.getEmail());
+        // Store in Redis
+        this.verificationService.storeRequest(entry);
+        this.emailService.emailCode(
+                entry.getVerificationCode(),
+                entry.getExpiryDate(),
+                request.getEmail()
+        );
+        return new VerificationCodeResponse(entry.getRequestId(), entry.getExpiryDate());
+    }
+
+    @Override
+    public UserDTO completeRegistration(SignUpRequest request) {
+        // Validate the verification code
+        verificationService.validateVerificationCodeAgainstRedis(request); // this generates exceptions related to
+        // Create the user
+        UserDTO userDTO = new UserDTO();
+        userDTO.setEmail(request.getEmail());
+        userDTO.setUsername(request.getUsername());
+        userDTO.setPassword(request.getPassword());
+
+        // Save the user (this now includes roles in the UserDTO)
+        UserDTO createdUser = userService.createUser(userDTO); // this should generate exceptions related to user creation
+        return createdUser;
+    }
+
+    @Override
+    public Map<String, String> generateAccessToken(Authentication authentication) {
+        return this.tokenService.generateToken(authentication.getName(), authentication.getAuthorities());
+    }
+}
+
+
+=== File: CustomUserDetailsService.java ===
+package com.falcon.falcon.service.impl;
+
+import com.falcon.falcon.entity.User;
+import com.falcon.falcon.repository.UserRepository;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
+
+@Service // this bean is used by the authentication provider to load the user by username and compare credentials
+public class CustomUserDetailsService implements UserDetailsService {
+    private final UserRepository userRepository;
+
+    public CustomUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username).orElseThrow(()->new UsernameNotFoundException("User not found: " + username)); // we get the user by Username
+        Collection<GrantedAuthority> grantedAuthorities = user.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.getName())).collect(Collectors.toSet()); // we extract roles
+        UserDetails userDetails = org.springframework.security.core.userdetails.User // pattern Builder : we build the User Details Object and return it
+                .withUsername(user.getUsername())
+                .password(user.getPassword())
+                .authorities(grantedAuthorities)
+                .build();
+        return userDetails;
+    }
+}
+
+
+=== File: EmailServiceImp.java ===
+package com.falcon.falcon.service.impl;
+
+import com.falcon.falcon.service.EmailService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+
+@Service
+public class EmailServiceImp implements EmailService {
+
+    private final JavaMailSender mailSender;
+    private final String fromEmail;
+
+    public EmailServiceImp(JavaMailSender mailSender,
+                        @Value("${spring.mail.username}") String fromEmail) {
+        this.mailSender = mailSender;
+        this.fromEmail = fromEmail;
+    }
+
+    public void emailCode(String code, String expiryDate, String toEmail) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("Your Verification Code");
+        message.setText("Your verification code is: " + code + "\n" +
+                "This code will expire at: " + expiryDate);
+
+        mailSender.send(message);
+    }
+}
+
+=== File: RoomServiceImpl.java ===
+package com.falcon.falcon.service.impl;
+
+import com.falcon.falcon.dto.RoomDTO;
+import com.falcon.falcon.entity.Room;
+import com.falcon.falcon.exceptions.roomExceptions.RoomAlreadySavedException;
+import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
+import com.falcon.falcon.mapper.ChallengeMapper;
+import com.falcon.falcon.mapper.RoomMapper;
+import com.falcon.falcon.repository.RoomRepository;
+import com.falcon.falcon.service.RoomService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class RoomServiceImpl implements RoomService {
+
+    private RoomRepository roomRepository;
+    private RoomMapper roomMapper;
+    private ChallengeMapper challengeMapper;
+
+    public RoomServiceImpl(RoomRepository roomRepository, RoomMapper roomMapper, ChallengeMapper challengeMapper) {
+        this.roomRepository = roomRepository;
+        this.roomMapper = roomMapper;
+        this.challengeMapper = challengeMapper;
+    }
+//     @Transactional(readOnly = true) tells Spring and Hibernate, “This method will only read data from the database, not change it.”
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoomDTO> getAllRooms() {
+        return roomRepository.findAll().stream()
+                .map(room -> roomMapper.toDTO(room))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RoomDTO getRoomById(Long id) {
+        Room room = roomRepository.findById(id).orElseThrow(()->new RoomNotFoundException("room not found"));
+        RoomDTO roomDTO = roomMapper.toDTO(room);
+        roomDTO.setChallenges(room.getChallenges().stream()
+                .map(challenge -> challengeMapper.toChallengeDTO(challenge))
+                .collect(Collectors.toList()));
+        return roomDTO;
+    }
+
+    @Override
+    @Transactional
+    public RoomDTO createRoom(RoomDTO roomDTO) throws RoomAlreadySavedException {
+        // Add debug logging
+        System.out.println("Received RoomDTO: " + roomDTO);
+        if (roomDTO.getAmiId() == null || roomDTO.getAmiId().trim().isEmpty()) {
+            throw new IllegalArgumentException("amiId cannot be null or empty");
+        }
+        // we check if a room with the same AMI id already exists
+        if(roomRepository.existsByAmiId(roomDTO.getAmiId())) {
+            throw new RoomAlreadySavedException("Room with the same AMI id or task definition name already exists");
+        }
+
+        Room room = roomMapper.toEntity(roomDTO);
+        System.out.println("Converted to Room entity: " + room);
+        // else we create a new Room object from the DTO passed
+        Room savedRoom = roomRepository.save(room);
+        System.out.println("Saved Room: " + savedRoom);
+        return roomMapper.toDTO(savedRoom);
+    }
+}
+
+// NOTE 1 :
+// a room has only one unique pair of AMIid and taskDefinitionName , these are used to identify the virtual machine or container image in the cloud
+// each room has only type of machine, thus only AMI id if using EC2 instances or only one task definition name if using ECS containers
+// we need to check if a room with the same AMIid or task definition already exists.
+
+=== File: TokenServiceImp.java ===
+package com.falcon.falcon.service.impl;
+
+import com.falcon.falcon.service.TokenService;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+public class TokenServiceImp implements TokenService {
+    private JwtEncoder jwtEncoder;
+
+    public TokenServiceImp(JwtEncoder jwtEncoder) {
+        this.jwtEncoder = jwtEncoder;
+    }
+
+    @Override
+    public Map<String, String> generateToken(String subject, Collection<? extends GrantedAuthority> authorities){
+        String scope = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("self") // we issued this token
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plus(30, ChronoUnit.MINUTES))
+                .subject(subject)
+                .claim("scope", scope)
+                .build();
+
+        String jwt = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        return Map.of("access-token", jwt);
+    }
+}
+
+
+=== File: UserRoomServiceImp.java ===
+package com.falcon.falcon.service.impl;
+
+import com.falcon.falcon.dto.RoomDTO;
+import com.falcon.falcon.entity.Room;
+import com.falcon.falcon.entity.RoomMembership;
+import com.falcon.falcon.entity.User;
+import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
+import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
+import com.falcon.falcon.mapper.ChallengeMapper;
+import com.falcon.falcon.mapper.RoomMapper;
+import com.falcon.falcon.mapper.UserMapper;
+import com.falcon.falcon.repository.RoleRepository;
+import com.falcon.falcon.repository.RoomMembershipRepository;
+import com.falcon.falcon.repository.RoomRepository;
+import com.falcon.falcon.repository.UserRepository;
+import com.falcon.falcon.service.UserRoomService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+/**
+ * Service responsible for managing user-room relationships and interactions.
+ * Handles operations such as joining/saving rooms, retrieving user-specific room lists,
+ * and managing room memberships. This service acts as an intermediary layer between
+ * users and rooms, maintaining the state of user progress and preferences within rooms
+ * through the RoomMembership entity. All operations are user-context aware, providing
+ * personalized room data based on the user's interaction history.
+ */
+@Service
+public class UserRoomServiceImp implements UserRoomService {
+    private final ChallengeMapper challengeMapper;
+    private RoomMapper roomMapper;
+    private UserRepository userRepository;
+    private RoomRepository roomRepository;
+    private RoomMembershipRepository roomMembershipRepository;
+
+    public UserRoomServiceImp(UserRepository userRepository, RoomRepository roomRepository, RoomMembershipRepository roomMembershipRepository, RoleRepository roleRepository, PasswordEncoder bCryptPasswordEncoder, UserMapper userMapper, RoomMapper roomMapper, ChallengeMapper challengeMapper) {
+        this.userRepository = userRepository;
+        this.roomRepository = roomRepository;
+        this.roomMembershipRepository = roomMembershipRepository;
+        this.challengeMapper = challengeMapper;
+        this.roomMapper = roomMapper;
+    }
+
+    // getJoinedRooms(Long userId)
+    /*
+    Retrieves all rooms that a user has explicitly joined
+ * 1. Fetches the user with their memberships and rooms using a custom repository query
+ * 2. Filters memberships where isJoined = true
+ * 3. Maps each membership to a RoomDTO with user-specific data (progress, status)
+ * 4. Returns the list of rooms with their associated user membership data
+ * Throws UserNotFoundException if user doesn't exist
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoomDTO> getJoinedRooms(Long userId) throws UserNotFoundException {
+        // first we retrieve the user (here we will use a custom query to get the user with its memberships and rooms) to avoid the static nature of EAGER and LAZY loading
+        User user = this.userRepository.findUserWithMembershipsAndRoomsById(userId).orElseThrow(()->new UserNotFoundException("user not found"));
+        // now we need to return all rooms joined by this user
+        return user.getMemberships().stream()
+                .filter(rm -> rm.getIsJoined().equals(true))
+                .map(rm -> roomMapper.toUserSpecificDTO(rm.getRoom(), rm))
+                .collect(Collectors.toList());
+    }
+
+    // getSavedRooms(Long userId):
+    /*
+     * Retrieves all rooms that a user has bookmarked/saved.
+     * 1. Fetches the user with their memberships and rooms
+     * 2. Filters memberships where isSaved = true
+     * 3. Maps each membership to a RoomDTO with user-specific data
+     * 4. Returns the list of saved rooms with their membership status
+     * Throws UserNotFoundException if user doesn't exist
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoomDTO> getSavedRooms(Long userId) throws UserNotFoundException {
+        User user = this.userRepository.findUserWithMembershipsAndRoomsById(userId).orElseThrow(()->new UserNotFoundException("user not found"));
+        return user.getMemberships().stream()
+                .filter(rm -> rm.getIsSaved().equals(true))
+                .map(rm -> roomMapper.toUserSpecificDTO(rm.getRoom(), rm))
+                .collect(Collectors.toList());
+    }
+
+    // getCompletedRooms(Long userId):
+    /*
+     * Retrieves all rooms that a user has fully completed.
+     * 1. Fetches user with memberships and rooms
+     * 2. Filters memberships where completion rate = 100%
+     * 3. Maps each membership to a RoomDTO with completion data
+     * 4. Returns list of completed rooms with their stats
+     * Throws UserNotFoundException if user doesn't exist
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoomDTO> getCompletedRooms(Long userId) throws UserNotFoundException {
+        User user = this.userRepository.findUserWithMembershipsAndRoomsById(userId).orElseThrow(()->new UserNotFoundException("user not found"));
+        return user.getMemberships().stream()
+                .filter(m -> m.getChallengesCompleted()/m.getRoom().getTotalChallenges() == 1)
+                .map(m -> roomMapper.toUserSpecificDTO(m.getRoom(), m))
+                .collect(Collectors.toList());
+    }
+
+    // getJoinedRoom(Long userId, Long roomId):
+    /*
+     * Retrieves detailed information about a specific room the user has joined.
+     * 1. Fetches user with memberships, rooms, and challenges
+     * 2. Finds the specific room membership
+     * 3. Maps room to RoomDTO including:
+     *    - Room details (title, description)
+     *    - Challenge list
+     *    - Completion status
+     * 4. Returns detailed room info with user-specific data
+     * Throws UserNotFoundException if user not found
+     * Throws RoomNotFoundException if room not found in user's memberships
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public RoomDTO getJoinedRoom(Long userId, Long roomId) throws UserNotFoundException, RoomNotFoundException {
+        // here we will fetch The User, and then we will search for the room in the memberships
+        User user = this.userRepository.findUserWithMembershipsAndRoomsAndChallengesById(userId).orElseThrow(()->new UserNotFoundException("user not found"));
+        // now we will search for the room in the memberships
+        return user.getMemberships().stream()
+                .filter(rm -> rm.getRoom().getId().equals(roomId))
+                .map(rm -> {
+                    Room room = rm.getRoom();
+                    RoomDTO roomDTO = roomMapper.toDTO(room);
+                    roomDTO.setChallenges(room.getChallenges().stream()
+                            .map(challenge -> challengeMapper.toChallengeDTO(challenge))
+                            .collect(Collectors.toList()));
+                    return roomDTO;
+                })
+                .findFirst()
+                .orElseThrow(()->new RoomNotFoundException("room not found")); // this unwraps the Optional and throws the exception if not found
+    }
+
+    @Override
+    @Transactional
+    public void joinRoom(Long userId, Long roomId) throws UserNotFoundException, RoomNotFoundException {
+        // step 1 : this returns an optional (this may or may not have a roomMembership)
+        Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByRoomIdAndUserId(roomId, userId);
+        // step 2 : check
+        roomMembership.ifPresentOrElse(
+                // if the room membership is present
+                membership -> {
+                    membership.setIsJoined(true); // we set isJoined to true
+                    this.roomMembershipRepository.save(membership); // we persist it
+                },
+                // if the room membership is not present this means the room was never saved before, and an entry in the roomMembership table is not there
+                () -> {
+                    User user = this.userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("user not found")); // we first retrieve the user
+                    Room room = this.roomRepository.findById(roomId).orElseThrow(() -> new RoomNotFoundException("room not found")); // then the room
+                    RoomMembership newRoomMembership = new RoomMembership(); // then we create a new Room Membership
+                    // we then set the relationship
+                    newRoomMembership.setRoom(room);
+                    newRoomMembership.setUser(user);
+                    // then we mark the user as joined
+                    newRoomMembership.setIsSaved(false);
+                    newRoomMembership.setIsJoined(true);
+                    this.roomMembershipRepository.save(newRoomMembership); // then we save the room membership
+                    // in the future we should from here signal out to the roomService that a new user has joined a room
+                }
+        );
+
+    }
+
+    @Override
+    @Transactional
+    public void saveRoom(Long userId, Long roomId) throws UserNotFoundException, RoomNotFoundException {
+        // again here we have two cases
+        // if the user has joined the room then we will just modify the existing relationship
+        // else we will create a new roomMembership
+
+        // step 1
+        Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByRoomIdAndUserId(roomId, userId);
+        // step 2
+        roomMembership.ifPresentOrElse(
+                membership -> {
+                    membership.setIsSaved(true);
+                    this.roomMembershipRepository.save(membership);
+                },
+                // if the room membership is not present this means that there is no entry in the roomMembership table
+                () -> {
+                    User user = this.userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("user not found")); // we first retrieve the user
+                    Room room = this.roomRepository.findById(roomId).orElseThrow(() -> new RoomNotFoundException("room not found")); // then the room
+                    RoomMembership newRoomMembership = new RoomMembership(); // then we create a new Room Membership
+                    // we then set the relationship
+                    newRoomMembership.setRoom(room);
+                    newRoomMembership.setUser(user);
+                    // then we mark the user as joined
+                    newRoomMembership.setIsJoined(false);
+                    newRoomMembership.setIsSaved(true);
+                    this.roomMembershipRepository.save(newRoomMembership); // then we save the room membership
+                    // in the future we should from here signal out to the roomService that a new user has joined a room
+                }
+        );
+
+    }
+}
+
+
+=== File: UserServiceImp.java ===
+package com.falcon.falcon.service.impl;
+
+import com.falcon.falcon.dto.RoomDTO;
+import com.falcon.falcon.dto.UserDTO;
+import com.falcon.falcon.entity.Room;
+import com.falcon.falcon.entity.RoomMembership;
+import com.falcon.falcon.exceptions.*;
+import com.falcon.falcon.mapper.ChallengeMapper;
+import com.falcon.falcon.mapper.RoomMapper;
+import com.falcon.falcon.mapper.UserMapper;
+import com.falcon.falcon.entity.Role;
+import com.falcon.falcon.entity.User;
+import com.falcon.falcon.repository.RoleRepository;
+import com.falcon.falcon.repository.RoomMembershipRepository;
+import com.falcon.falcon.repository.RoomRepository;
+import com.falcon.falcon.repository.UserRepository;
+import com.falcon.falcon.service.UserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class UserServiceImp implements UserService {
+
+    private UserRepository userRepository;
+    private RoleRepository roleRepository;
+    private PasswordEncoder bCryptPasswordEncoder;
+    private UserMapper userMapper;
+
+    public UserServiceImp(UserRepository userRepository, RoomRepository roomRepository, RoomMembershipRepository roomMembershipRepository, RoleRepository roleRepository, PasswordEncoder bCryptPasswordEncoder, UserMapper userMapper, RoomMapper roomMapper, ChallengeMapper challengeMapper) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.userMapper = userMapper;
+    }
+
+    public void validateEmailNotExists(String email) throws UserAlreadyExistsException {
+        this.userRepository.findByEmail(email).ifPresent(u -> {
+            throw new UserAlreadyExistsException("An account with this email already exists");
+        });
+    }
+
+    // set for review !!
+    @Override
+    public UserDTO createUser(UserDTO userDTO) throws RoleNotFoundException {
+        User newUser = this.userMapper.toEntity(userDTO);
+        newUser.setPassword(this.bCryptPasswordEncoder.encode(userDTO.getPassword()));
+        Role role = roleRepository.findByName("ROLE_USER").orElseThrow(() -> { throw new RoleNotFoundException("role not found"); });
+        // now we will add the role to the collection of roles in the user and viceversa
+        newUser.getRoles().add(role);
+        role.getUsers().add(newUser);
+        User savedUser = this.userRepository.save(newUser);
+        roleRepository.save(role);
+         // here we save the user.
+        return userMapper.toDTO(savedUser);
+    }
+
+
+}
+
+
+=== File: VerificationServiceImp.java ===
+package com.falcon.falcon.service.impl;
+
+import com.falcon.falcon.dto.authDto.SignUpRequest;
+import com.falcon.falcon.dto.authDto.VerificationEntry;
+import com.falcon.falcon.exceptions.authExceptions.CodeExpiredException;
+import com.falcon.falcon.exceptions.authExceptions.EmaiNotVerifiedOrRequestIdNotValid;
+import com.falcon.falcon.exceptions.authExceptions.VerificationCodeInvalid;
+import com.falcon.falcon.service.VerificationService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+@Service
+public class VerificationServiceImp implements VerificationService {
+    // acts as a bridge between your Java application and the Redis database
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final int codeExpiryMinutes; // the number of minutes for the code validity
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    // here we will inject the env variable dependency, environment variables declared in the properties file, are beans manages by the IoC
+    // we can inject them into other IoC managed beans
+    public VerificationServiceImp(@Value("${verification.code.expiry:10}") int codeExpiryMinutes, RedisTemplate<String, Object> redisTemplate){
+        this.redisTemplate = redisTemplate;
+        this.codeExpiryMinutes = codeExpiryMinutes;
+    }
+
+    @Override
+    public VerificationEntry generateVerificationEntry(String email) {
+        // Check if an active verification entry already exists for this email
+        String existingRequestId = (String) redisTemplate.opsForValue().get("verification:email:" + email);
+
+        if (existingRequestId != null) {
+            // Retrieve the existing entry
+            VerificationEntry existingEntry = (VerificationEntry) redisTemplate.opsForValue().get("verification:" + existingRequestId);
+            if (existingEntry != null) {
+                // Return the existing entry instead of creating a new one
+                return existingEntry;
+            }
+            // If we get here, the entry exists in the email index but not in the main storage
+            // This indicates a data consistency issue, so we'll remove the stale reference
+            redisTemplate.delete("verification:email:" + email);
+        }
+
+        // Create a new entry if no active one exists
+        String requestId = UUID.randomUUID().toString();
+        String verificationCode = generateRandomCode();
+        // here we will create a string that will represent the date and time when the code will be expired
+        LocalDateTime expiryDateTime = LocalDateTime.now().plusMinutes(codeExpiryMinutes);
+        String expiryDateStr = expiryDateTime.format(FORMATTER);
+        return new VerificationEntry(requestId, email, verificationCode, expiryDateStr);
+    }
+
+    public void validateVerificationCodeAgainstRedis(SignUpRequest signUpRequest) throws CodeExpiredException, VerificationCodeInvalid, EmaiNotVerifiedOrRequestIdNotValid   {
+       // we need to retrieve an entry from redis using the requestId
+        // and check if the entry exists
+        VerificationEntry storedVerificationEntry = (VerificationEntry) this.redisTemplate.opsForValue().get("verification:" + signUpRequest.getRequestId());
+        if (storedVerificationEntry != null) {
+            // now after that we checked that the requestId is for a non expired code
+            // we will check if the email used in the SignUp request is the same one that received the Code
+            String storedRequestId = (String) this.redisTemplate.opsForValue().get("verification:email:" + signUpRequest.getEmail());
+            if ((storedRequestId != null) && (storedRequestId.equals(storedVerificationEntry.getRequestId()))) {
+                // this means that the email used to sign up is present and the request corresponds
+                // now we will check if the verification code is the same as the one stored in the verification entr
+                if (signUpRequest.getCode().equals(storedVerificationEntry.getVerificationCode())) { // here we will check if the code sent is true !
+                } else {
+                    // here we generate a wrong code error
+                    throw new VerificationCodeInvalid("invalid verification code");
+                }
+            } else {
+                // this means either the email used to complete registration was never verified
+                // or the requestId generated with this email is not the same as the one you sent
+                throw new EmaiNotVerifiedOrRequestIdNotValid("Email used for sign up not verified or the request id doesn't correspond to the email");
+            }
+
+        } else {
+            throw new CodeExpiredException("Code expired or wrong Request id");
+        }
+
+    }
+    // this will write entries to Redis
+    // we use the requestId as key
+    public void storeRequest(VerificationEntry entry) {
+        /* We will use the RedisTemplate instance template opsForValue() method to get an instance of ValueOperations,
+        which provides methods to execute operations performed on simple values (or Strings in Redis terminology).
+        The Redis SET method is implemented using the (you guessed it!) set() method, which takes a key name and a value. */
+        /* the set method can take up to 4 arguments :
+        *    1 - the key which will be used to retrieve values from Redis
+        *    2 - the value object, what ae are storing
+        *    3 - timeout 4 - time unit
+        * */
+        // Store using requestId as key for later verification
+        redisTemplate.opsForValue().set(
+                "verification:" + entry.getRequestId(),
+                entry,
+                codeExpiryMinutes,
+                TimeUnit.MINUTES
+        );
+
+        // Also store using email to prevent multiple requests
+        // this will be useful , in case a user already sent a verificationCodeRequest before, in this case well return back the already sent requestId
+        // user 1 sent code request -> requesId and code generated all good, if the user goes to email and gets code and signs up then good, but if he resent a code request then we should only check if an entry is here is its here then we return a message prompying the user to check email
+        redisTemplate.opsForValue().set(
+                "verification:email:" + entry.getEmail(),
+                entry.getRequestId(),
+                codeExpiryMinutes,
+                TimeUnit.MINUTES
+        );
+
+
+    }
+
+    private String generateRandomCode() {
+        // Generate a 6-digit verification code
+        return String.format("%06d", (int)(Math.random() * 1000000));
+    }
+}
+
+
+/*
+• How to configure the connection to Redis from the application ?
+• How to access and configure the Spring Data RedisTemplate ?
+• How to use opsForXXX to read and write data to Redis ?
+
+Spring Data Redis provides access to Redis from Spring applications.
+It offers both low-level and high-level abstractions for interacting with Redis.
+*/

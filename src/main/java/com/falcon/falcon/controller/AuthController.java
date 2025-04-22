@@ -1,7 +1,11 @@
 package com.falcon.falcon.controller;
 
-import com.falcon.falcon.DTOs.*;
-import com.falcon.falcon.service.interfaces.AuthService;
+import com.falcon.falcon.dto.*;
+import com.falcon.falcon.dto.authDto.LoginRequest;
+import com.falcon.falcon.dto.authDto.SignUpRequest;
+import com.falcon.falcon.dto.authDto.VerificationCodeRequest;
+import com.falcon.falcon.dto.authDto.VerificationCodeResponse;
+import com.falcon.falcon.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;

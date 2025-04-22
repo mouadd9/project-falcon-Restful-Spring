@@ -1,6 +1,6 @@
 package com.falcon.falcon.repository;
 
-import com.falcon.falcon.model.Role;
+import com.falcon.falcon.entity.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

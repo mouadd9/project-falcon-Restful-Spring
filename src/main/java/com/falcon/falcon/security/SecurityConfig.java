@@ -1,11 +1,6 @@
 package com.falcon.falcon.security;
 
-import com.falcon.falcon.service.implementations.CustomUserDetailsService;
-import org.springframework.core.io.Resource;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.springframework.beans.factory.annotation.Value;
+import com.falcon.falcon.service.impl.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,10 +18,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.security.interfaces.RSAPublicKey;
 
 // this class will provide a bean of a configured securityFilterChain, the filter chain is configured to validate the access-tokens for all the requests that require validation.
 // we add a jwt validator to the filter chain.
@@ -61,6 +52,7 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .authorizeHttpRequests(ar -> {
                     ar.requestMatchers("/auth/**").permitAll();
+                    ar.requestMatchers("/api/**").permitAll();
                     ar.anyRequest().authenticated();
                     System.out.println("Security configuration applied: /auth/** is permitted");
                 })

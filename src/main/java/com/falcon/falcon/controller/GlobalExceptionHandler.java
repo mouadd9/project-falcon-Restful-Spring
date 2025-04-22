@@ -1,7 +1,14 @@
 package com.falcon.falcon.controller;
 
-import com.falcon.falcon.DTOs.ErrorResponse;
-import com.falcon.falcon.exceptions.*;
+import com.falcon.falcon.dto.ErrorResponse;
+import com.falcon.falcon.exceptions.authExceptions.CodeExpiredException;
+import com.falcon.falcon.exceptions.authExceptions.EmaiNotVerifiedOrRequestIdNotValid;
+import com.falcon.falcon.exceptions.authExceptions.VerificationCodeInvalid;
+import com.falcon.falcon.exceptions.roomExceptions.RoomAlreadySavedException;
+import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
+import com.falcon.falcon.exceptions.userExceptions.RoleNotFoundException;
+import com.falcon.falcon.exceptions.userExceptions.UserAlreadyExistsException;
+import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,6 +25,7 @@ import org.springframework.security.core.AuthenticationException;
 */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    // AUTH controller exceptions
     // here we will handle each Exception throws by the controller or other service class
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(UserAlreadyExistsException ex, WebRequest request) {
@@ -82,21 +90,6 @@ public class GlobalExceptionHandler {
     // AuthenticationException
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex, WebRequest request) {
-       // String errorCode;
-        // Determine specific error code based on the type of AuthenticationException
-        /*if (ex instanceof BadCredentialsException) {
-            errorCode = "INVALID_CREDENTIALS";
-        } else if (ex instanceof LockedException) {
-            errorCode = "ACCOUNT_LOCKED";
-        } else if (ex instanceof DisabledException) {
-            errorCode = "ACCOUNT_DISABLED";
-        } else if (ex instanceof AccountExpiredException) {
-            errorCode = "ACCOUNT_EXPIRED";
-        } else {
-            errorCode = "AUTHENTICATION_FAILED";
-        }*/
-
-        // Create the error response object
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(), // 401
                 "AUTHENTICATION_FAILED",
@@ -107,6 +100,48 @@ public class GlobalExceptionHandler {
         // Return the ResponseEntity with the error response and HTTP 401 status
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
+
+    // Room Controller exception handlers
+    @ExceptionHandler(RoomNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRoomNotFoundException(AuthenticationException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(), // 401
+                "ROOM_NOT_FOUND",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+
+        // Return the ResponseEntity with the error response and HTTP 401 status
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RoomAlreadySavedException.class)
+    public ResponseEntity<ErrorResponse> handleRoomAlreadySavedException(AuthenticationException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.CONFLICT.value(), // 401
+                "ROOM_ALREADY_SAVED",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+
+        // Return the ResponseEntity with the error response and HTTP 401 status
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(AuthenticationException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(), // 401
+                "USER_NOT_FOUND",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+
+        // Return the ResponseEntity with the error response and HTTP 401 status
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+
 
 
 }
