@@ -1,15 +1,19 @@
 package com.falcon.falcon.service;
 
 import com.falcon.falcon.dto.RoomDTO;
+import com.falcon.falcon.exceptions.membershipExceptions.RoomMembershipNotFoundException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
 import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
 
 import java.util.List;
 
+// User-room relationship management
 public interface UserRoomService {
     // Room membership operations
     void joinRoom(Long userId, Long roomId) throws UserNotFoundException, RoomNotFoundException; // if the room is already saved we will set joinedAt to the existing room membership
     void saveRoom(Long userId, Long roomId) throws UserNotFoundException, RoomNotFoundException; // if the room is already joined we will set isSaved to true and not create the membership.
+    void unSaveRoom(Long userId, Long roomId) throws RoomMembershipNotFoundException; // if the room is already joined we will set isSaved to false and not create the membership.
+    void leaveRoom(Long userId, Long roomId) throws RoomMembershipNotFoundException; // if the room is already joined we will set leftAt to the existing room membership
     // Room retrieval operations
     List<RoomDTO> getJoinedRooms(Long userId) throws UserNotFoundException; // we use the memberships
     List<RoomDTO> getSavedRooms(Long userId) throws UserNotFoundException; // we use the memberships

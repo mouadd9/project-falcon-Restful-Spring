@@ -6,17 +6,15 @@ import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
 
 import java.util.List;
 
-// provides basic room information
+// Room management
 public interface RoomService {
 
     // Done ! ready for tests !!
-    List<RoomDTO> getAllRooms();
-
-    RoomDTO getRoomById(Long id) throws RoomNotFoundException;
-
+    List<RoomDTO> getAllRooms(); // fetch all rooms
+    RoomDTO getRoomById(Long id) throws RoomNotFoundException; // get room related data
     RoomDTO createRoom(RoomDTO roomDTO) throws RoomAlreadySavedException;
-    // incrementJoinedUsers()
-    // decrementJoinedUsers()
+    public void incrementJoinedUsers(Long roomId) throws RoomNotFoundException;
+    public void decrementJoinedUsers(Long roomId) throws RoomNotFoundException;
     // incrementRunningInstances()
     // decrementRunningInstances()
 

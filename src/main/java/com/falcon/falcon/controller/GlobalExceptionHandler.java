@@ -4,6 +4,7 @@ import com.falcon.falcon.dto.ErrorResponse;
 import com.falcon.falcon.exceptions.authExceptions.CodeExpiredException;
 import com.falcon.falcon.exceptions.authExceptions.EmaiNotVerifiedOrRequestIdNotValid;
 import com.falcon.falcon.exceptions.authExceptions.VerificationCodeInvalid;
+import com.falcon.falcon.exceptions.membershipExceptions.RoomMembershipNotFoundException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomAlreadySavedException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
 import com.falcon.falcon.exceptions.userExceptions.RoleNotFoundException;
@@ -141,6 +142,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(RoomMembershipNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRoomMembershipNotFoundException(RoomMembershipNotFoundException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "ROOM_MEMBERSHIP_NOT_FOUND",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
 
 
 

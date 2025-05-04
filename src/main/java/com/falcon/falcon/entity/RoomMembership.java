@@ -19,7 +19,6 @@ public class RoomMembership {
 
     private Boolean isJoined;
     private Boolean isSaved;
-    private Boolean isCompleted;
     private Date completedAt;
     private int challengesCompleted;
 

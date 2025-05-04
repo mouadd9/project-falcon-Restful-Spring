@@ -4,6 +4,7 @@ import com.falcon.falcon.dto.RoomDTO;
 import com.falcon.falcon.entity.Room;
 import com.falcon.falcon.entity.RoomMembership;
 import com.falcon.falcon.entity.User;
+import com.falcon.falcon.exceptions.membershipExceptions.RoomMembershipNotFoundException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
 import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
 import com.falcon.falcon.mapper.ChallengeMapper;
@@ -13,7 +14,9 @@ import com.falcon.falcon.repository.RoleRepository;
 import com.falcon.falcon.repository.RoomMembershipRepository;
 import com.falcon.falcon.repository.RoomRepository;
 import com.falcon.falcon.repository.UserRepository;
+import com.falcon.falcon.service.RoomService;
 import com.falcon.falcon.service.UserRoomService;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,13 +39,15 @@ public class UserRoomServiceImp implements UserRoomService {
     private UserRepository userRepository;
     private RoomRepository roomRepository;
     private RoomMembershipRepository roomMembershipRepository;
+    private RoomService roomService;
 
-    public UserRoomServiceImp(UserRepository userRepository, RoomRepository roomRepository, RoomMembershipRepository roomMembershipRepository, RoleRepository roleRepository, PasswordEncoder bCryptPasswordEncoder, UserMapper userMapper, RoomMapper roomMapper, ChallengeMapper challengeMapper) {
+    public UserRoomServiceImp(UserRepository userRepository, RoomRepository roomRepository, RoomMembershipRepository roomMembershipRepository, RoleRepository roleRepository, PasswordEncoder bCryptPasswordEncoder, UserMapper userMapper, RoomMapper roomMapper, ChallengeMapper challengeMapper, RoomService roomService) {
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
         this.roomMembershipRepository = roomMembershipRepository;
         this.challengeMapper = challengeMapper;
         this.roomMapper = roomMapper;
+        this.roomService = roomService;
     }
 
     // getJoinedRooms(Long userId)
@@ -127,7 +132,7 @@ public class UserRoomServiceImp implements UserRoomService {
                 .filter(rm -> rm.getRoom().getId().equals(roomId))
                 .map(rm -> {
                     Room room = rm.getRoom();
-                    RoomDTO roomDTO = roomMapper.toDTO(room);
+                    RoomDTO roomDTO = roomMapper.toUserSpecificDTO(room, rm);
                     roomDTO.setChallenges(room.getChallenges().stream()
                             .map(challenge -> challengeMapper.toChallengeDTO(challenge))
                             .collect(Collectors.toList()));
@@ -146,6 +151,7 @@ public class UserRoomServiceImp implements UserRoomService {
         roomMembership.ifPresentOrElse(
                 // if the room membership is present
                 membership -> {
+                    this.roomService.incrementJoinedUsers(roomId);
                     membership.setIsJoined(true); // we set isJoined to true
                     this.roomMembershipRepository.save(membership); // we persist it
                 },
@@ -199,4 +205,48 @@ public class UserRoomServiceImp implements UserRoomService {
         );
 
     }
+
+    @Override
+    @Transactional
+    public void unSaveRoom(Long userId, Long roomId) throws RoomMembershipNotFoundException {
+        Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByRoomIdAndUserId(roomId, userId);
+        roomMembership.ifPresentOrElse(membership -> {
+            if (membership.getIsJoined()) { // if the room is Joined, then we will, set isSaved to false
+                membership.setIsSaved(false);
+                this.roomMembershipRepository.save(membership);
+            } else {
+                this.roomMembershipRepository.delete(membership);
+            }
+        }, () -> {
+            throw new RoomMembershipNotFoundException("User has not saved this room"); // Handle case where membership doesn't exist
+        });
+    }
+
+    @Override
+    @Transactional
+    public void leaveRoom(Long userId, Long roomId) throws RoomMembershipNotFoundException {
+        Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByRoomIdAndUserId(roomId, userId);
+        roomMembership.ifPresentOrElse(membership -> { // most likely the room membership will exist (with isJoined set to true) , because teh room shown in the UI is Joined by that user
+            // STEP 1 :
+            this.roomService.decrementJoinedUsers(roomId); // this function will decrement the number of Joined Users and then broadcast the info via sockets to subscribers.
+            // STEP 2: [FUTURE] Insert your FlagSubmission clearing logic HERE
+            // This is where you'll add the call to clear flag submissions
+            // STEP 3 : cases
+            if (membership.getIsSaved()) { // if the room is Saved
+                membership.setIsJoined(false); // we set is Joined to False
+                membership.setChallengesCompleted(0);
+                this.roomMembershipRepository.save(membership);
+            } else { // if the room is not saved, we delete the room membership
+                this.roomMembershipRepository.delete(membership);
+            }
+        }, () -> {
+            throw new RoomMembershipNotFoundException("User has not joined this room"); // Handle case where membership doesn't exist
+        });
+    }
+
+    // TO DO
+    // here in the future we will integrate a user-challenges service
+    // responsible for the relationship between users and challenges that will reset challenges progress.
+
+
 }

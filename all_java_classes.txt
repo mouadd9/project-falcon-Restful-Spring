@@ -1,5 +1,5 @@
-=== File: src/main/java/com/falcon/falcon/config/RedisConfig.java ===
-package com.falcon.falcon.config;
+=== File: src/main/java/com/falcon/falcon/config/redis/RedisConfig.java ===
+package com.falcon.falcon.config.redis;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,8 +26,8 @@ public class RedisConfig {
 }
 
 
-=== File: src/main/java/com/falcon/falcon/config/StateConfig.java ===
-package com.falcon.falcon.config;
+=== File: src/main/java/com/falcon/falcon/config/statePattern/StateConfig.java ===
+package com.falcon.falcon.config.statePattern;
 
 import com.falcon.falcon.enums.InstanceStateEnum;
 import com.falcon.falcon.statePattern.InstanceState;
@@ -79,6 +79,10 @@ public class StateConfig {
 package com.falcon.falcon.controller;
 
 import com.falcon.falcon.dto.*;
+import com.falcon.falcon.dto.authDto.LoginRequest;
+import com.falcon.falcon.dto.authDto.SignUpRequest;
+import com.falcon.falcon.dto.authDto.VerificationCodeRequest;
+import com.falcon.falcon.dto.authDto.VerificationCodeResponse;
 import com.falcon.falcon.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -159,7 +163,14 @@ public class AuthController {
 package com.falcon.falcon.controller;
 
 import com.falcon.falcon.dto.ErrorResponse;
-import com.falcon.falcon.exceptions.*;
+import com.falcon.falcon.exceptions.authExceptions.CodeExpiredException;
+import com.falcon.falcon.exceptions.authExceptions.EmaiNotVerifiedOrRequestIdNotValid;
+import com.falcon.falcon.exceptions.authExceptions.VerificationCodeInvalid;
+import com.falcon.falcon.exceptions.roomExceptions.RoomAlreadySavedException;
+import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
+import com.falcon.falcon.exceptions.userExceptions.RoleNotFoundException;
+import com.falcon.falcon.exceptions.userExceptions.UserAlreadyExistsException;
+import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -299,6 +310,14 @@ public class GlobalExceptionHandler {
 
 
 
+=== File: src/main/java/com/falcon/falcon/controller/LiveRoomTracker.java ===
+package com.falcon.falcon.controller;
+
+public class LiveRoomTracker {
+}
+
+
+
 === File: src/main/java/com/falcon/falcon/controller/RoomController.java ===
 package com.falcon.falcon.controller;
 
@@ -346,7 +365,6 @@ public class RoomController {
 package com.falcon.falcon.controller;
 
 import com.falcon.falcon.dto.RoomDTO;
-import com.falcon.falcon.entity.Room;
 import com.falcon.falcon.facadePattern.DomainFacade;
 import com.falcon.falcon.service.UserRoomService;
 import com.falcon.falcon.service.UserService;
@@ -429,6 +447,87 @@ public class UserController {
 
 
 
+=== File: src/main/java/com/falcon/falcon/dto/authDto/LoginRequest.java ===
+package com.falcon.falcon.dto.authDto;
+
+import lombok.Data;
+
+@Data
+public class LoginRequest {
+    String username;
+    String password;
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/dto/authDto/SignUpRequest.java ===
+package com.falcon.falcon.dto.authDto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor @AllArgsConstructor
+public class SignUpRequest {
+    String requestId;
+    String code;
+    String email;
+    String username;
+    String password;
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/dto/authDto/VerificationCodeRequest.java ===
+package com.falcon.falcon.dto.authDto;
+
+import lombok.Data;
+
+@Data
+public class VerificationCodeRequest {
+    String email;
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/dto/authDto/VerificationCodeResponse.java ===
+package com.falcon.falcon.dto.authDto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data @NoArgsConstructor @AllArgsConstructor
+public class VerificationCodeResponse {
+    String requestId;
+    String expiryDate;
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/dto/authDto/VerificationEntry.java ===
+package com.falcon.falcon.dto.authDto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class VerificationEntry implements Serializable {
+    private String requestId;
+    private String email;
+    private String verificationCode;
+    private String expiryDate;
+}
+
+// objects of this class will be stored in memory caches that support serialization.
+
+
 === File: src/main/java/com/falcon/falcon/dto/ChallengeDTO.java ===
 package com.falcon.falcon.dto;
 
@@ -509,19 +608,6 @@ public class InstanceDTO {
 
 
 
-=== File: src/main/java/com/falcon/falcon/dto/LoginRequest.java ===
-package com.falcon.falcon.dto;
-
-import lombok.Data;
-
-@Data
-public class LoginRequest {
-    String username;
-    String password;
-}
-
-
-
 === File: src/main/java/com/falcon/falcon/dto/RoomDTO.java ===
 package com.falcon.falcon.dto;
 
@@ -561,25 +647,6 @@ public class RoomDTO {
 
 
 
-=== File: src/main/java/com/falcon/falcon/dto/SignUpRequest.java ===
-package com.falcon.falcon.dto;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor @AllArgsConstructor
-public class SignUpRequest {
-    String requestId;
-    String code;
-    String email;
-    String username;
-    String password;
-}
-
-
-
 === File: src/main/java/com/falcon/falcon/dto/UserDTO.java ===
 package com.falcon.falcon.dto;
 
@@ -600,55 +667,6 @@ public class UserDTO {
     private Collection<Role> roles; // Add this field
 } // this Object will be returned and used to generate the jwt.
 
-
-
-=== File: src/main/java/com/falcon/falcon/dto/VerificationCodeRequest.java ===
-package com.falcon.falcon.dto;
-
-import lombok.Data;
-
-@Data
-public class VerificationCodeRequest {
-    String email;
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/dto/VerificationCodeResponse.java ===
-package com.falcon.falcon.dto;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data @NoArgsConstructor @AllArgsConstructor
-public class VerificationCodeResponse {
-    String requestId;
-    String expiryDate;
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/dto/VerificationEntry.java ===
-package com.falcon.falcon.dto;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.io.Serializable;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class VerificationEntry implements Serializable {
-    private String requestId;
-    private String email;
-    private String verificationCode;
-    private String expiryDate;
-}
-
-// objects of this class will be stored in memory caches that support serialization.
 
 
 === File: src/main/java/com/falcon/falcon/entity/Challenge.java ===
@@ -987,8 +1005,8 @@ public enum InstanceStateEnum {
 
 
 
-=== File: src/main/java/com/falcon/falcon/exceptions/CodeExpiredException.java ===
-package com.falcon.falcon.exceptions;
+=== File: src/main/java/com/falcon/falcon/exceptions/authExceptions/CodeExpiredException.java ===
+package com.falcon.falcon.exceptions.authExceptions;
 
 public class CodeExpiredException extends RuntimeException {
     public CodeExpiredException(String message) {
@@ -998,8 +1016,8 @@ public class CodeExpiredException extends RuntimeException {
 
 
 
-=== File: src/main/java/com/falcon/falcon/exceptions/EmaiNotVerifiedOrRequestIdNotValid.java ===
-package com.falcon.falcon.exceptions;
+=== File: src/main/java/com/falcon/falcon/exceptions/authExceptions/EmaiNotVerifiedOrRequestIdNotValid.java ===
+package com.falcon.falcon.exceptions.authExceptions;
 
 public class EmaiNotVerifiedOrRequestIdNotValid extends RuntimeException {
     public EmaiNotVerifiedOrRequestIdNotValid(String message) {
@@ -1009,85 +1027,8 @@ public class EmaiNotVerifiedOrRequestIdNotValid extends RuntimeException {
 
 
 
-=== File: src/main/java/com/falcon/falcon/exceptions/RoleNotFoundException.java ===
-package com.falcon.falcon.exceptions;
-
-public class RoleNotFoundException extends RuntimeException {
-    public RoleNotFoundException(String message) {
-        super(message);
-    }
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/exceptions/RoomAlreadySavedException.java ===
-package com.falcon.falcon.exceptions;
-
-public class RoomAlreadySavedException extends RuntimeException {
-    public RoomAlreadySavedException(String message) {
-        super(message);
-    }
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/exceptions/RoomMembershipNotFoundException.java ===
-package com.falcon.falcon.exceptions;
-
-public class RoomMembershipNotFoundException extends RuntimeException {
-    public RoomMembershipNotFoundException(String message) {
-        super(message);
-    }
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/exceptions/RoomNotFoundException.java ===
-package com.falcon.falcon.exceptions;
-
-public class RoomNotFoundException extends RuntimeException {
-    public RoomNotFoundException(String message) {
-        super(message);
-    }
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/exceptions/UserAlreadyExistsException.java ===
-package com.falcon.falcon.exceptions;
-
-public class UserAlreadyExistsException extends RuntimeException {
-    public UserAlreadyExistsException(String message) {
-        super(message);
-    }
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/exceptions/UserAlreadyJoinedException.java ===
-package com.falcon.falcon.exceptions;
-
-public class UserAlreadyJoinedException extends RuntimeException {
-    public UserAlreadyJoinedException(String message) {
-        super(message);
-    }
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/exceptions/UserNotFoundException.java ===
-package com.falcon.falcon.exceptions;
-
-public class UserNotFoundException extends RuntimeException {
-    public UserNotFoundException(String message) {
-        super(message);
-    }
-}
-
-
-
-=== File: src/main/java/com/falcon/falcon/exceptions/VerificationCodeInvalid.java ===
-package com.falcon.falcon.exceptions;
+=== File: src/main/java/com/falcon/falcon/exceptions/authExceptions/VerificationCodeInvalid.java ===
+package com.falcon.falcon.exceptions.authExceptions;
 
 public class VerificationCodeInvalid extends RuntimeException {
     public VerificationCodeInvalid(String message) {
@@ -1097,7 +1038,84 @@ public class VerificationCodeInvalid extends RuntimeException {
 
 
 
-=== File: src/main/java/com/falcon/falcon/facade/DomainFacade.java ===
+=== File: src/main/java/com/falcon/falcon/exceptions/membershipExceptions/RoomMembershipNotFoundException.java ===
+package com.falcon.falcon.exceptions.membershipExceptions;
+
+public class RoomMembershipNotFoundException extends RuntimeException {
+    public RoomMembershipNotFoundException(String message) {
+        super(message);
+    }
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/exceptions/membershipExceptions/UserAlreadyJoinedException.java ===
+package com.falcon.falcon.exceptions.membershipExceptions;
+
+public class UserAlreadyJoinedException extends RuntimeException {
+    public UserAlreadyJoinedException(String message) {
+        super(message);
+    }
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/exceptions/roomExceptions/RoomAlreadySavedException.java ===
+package com.falcon.falcon.exceptions.roomExceptions;
+
+public class RoomAlreadySavedException extends RuntimeException {
+    public RoomAlreadySavedException(String message) {
+        super(message);
+    }
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/exceptions/roomExceptions/RoomNotFoundException.java ===
+package com.falcon.falcon.exceptions.roomExceptions;
+
+public class RoomNotFoundException extends RuntimeException {
+    public RoomNotFoundException(String message) {
+        super(message);
+    }
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/exceptions/userExceptions/RoleNotFoundException.java ===
+package com.falcon.falcon.exceptions.userExceptions;
+
+public class RoleNotFoundException extends RuntimeException {
+    public RoleNotFoundException(String message) {
+        super(message);
+    }
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/exceptions/userExceptions/UserAlreadyExistsException.java ===
+package com.falcon.falcon.exceptions.userExceptions;
+
+public class UserAlreadyExistsException extends RuntimeException {
+    public UserAlreadyExistsException(String message) {
+        super(message);
+    }
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/exceptions/userExceptions/UserNotFoundException.java ===
+package com.falcon.falcon.exceptions.userExceptions;
+
+public class UserNotFoundException extends RuntimeException {
+    public UserNotFoundException(String message) {
+        super(message);
+    }
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/facadePattern/DomainFacade.java ===
 package com.falcon.falcon.facadePattern;
 
 import com.falcon.falcon.dto.RoomDTO;
@@ -1112,7 +1130,7 @@ public interface DomainFacade {
 
 
 
-=== File: src/main/java/com/falcon/falcon/facade/impl/DomainFacadeIml.java ===
+=== File: src/main/java/com/falcon/falcon/facadePattern/impl/DomainFacadeIml.java ===
 package com.falcon.falcon.facadePattern.impl;
 
 import com.falcon.falcon.dto.RoomDTO;
@@ -1361,6 +1379,22 @@ public class UserMapper {
         user.setEmail(userDTO.getEmail());
         return user;
     }
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/observerPattern/Observer.java ===
+package com.falcon.falcon.observerPattern;
+
+public interface Observer {
+}
+
+
+
+=== File: src/main/java/com/falcon/falcon/observerPattern/Subject.java ===
+package com.falcon.falcon.observerPattern;
+
+public interface Subject {
 }
 
 
@@ -1717,9 +1751,16 @@ public interface EmailService {
 package com.falcon.falcon.service.impl;
 
 import com.falcon.falcon.dto.*;
+import com.falcon.falcon.dto.authDto.SignUpRequest;
+import com.falcon.falcon.dto.authDto.VerificationCodeRequest;
+import com.falcon.falcon.dto.authDto.VerificationCodeResponse;
+import com.falcon.falcon.dto.authDto.VerificationEntry;
+import com.falcon.falcon.entity.User;
 import com.falcon.falcon.exceptions.userExceptions.UserAlreadyExistsException;
+import com.falcon.falcon.repository.UserRepository;
 import com.falcon.falcon.service.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -1727,12 +1768,14 @@ import java.util.Map;
 @Service
 public class AuthServiceImp implements AuthService {
     private UserService userService;
+    private UserRepository userRepository;
     private EmailService emailService;
     private VerificationService verificationService;
     private TokenService tokenService;
 
-    public AuthServiceImp(UserService userService, EmailService emailService, VerificationService verificationService, TokenService tokenService) {
+    public AuthServiceImp(UserService userService, UserRepository userRepository, EmailService emailService, VerificationService verificationService, TokenService tokenService) {
         this.userService = userService;
+        this.userRepository = userRepository;
         this.emailService = emailService;
         this.verificationService = verificationService;
         this.tokenService = tokenService;
@@ -1773,7 +1816,13 @@ public class AuthServiceImp implements AuthService {
 
     @Override
     public Map<String, String> generateAccessToken(Authentication authentication) {
-        return this.tokenService.generateToken(authentication.getName(), authentication.getAuthorities());
+        // Get the authenticated user's details
+        String username = authentication.getName();
+
+        // Find the user to get their ID
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        return this.tokenService.generateToken(authentication.getName(),user.getId(), authentication.getAuthorities());
     }
 }
 
@@ -1954,7 +2003,7 @@ public class TokenServiceImp implements TokenService {
     }
 
     @Override
-    public Map<String, String> generateToken(String subject, Collection<? extends GrantedAuthority> authorities){
+    public Map<String, String> generateToken(String subject, Long userId, Collection<? extends GrantedAuthority> authorities){
         String scope = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -1963,6 +2012,7 @@ public class TokenServiceImp implements TokenService {
                 .expiresAt(Instant.now().plus(30, ChronoUnit.MINUTES))
                 .subject(subject)
                 .claim("scope", scope)
+                .claim("userId", userId.toString()) // Add the user ID as a claim
                 .build();
 
         String jwt = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
@@ -2181,11 +2231,9 @@ public class UserRoomServiceImp implements UserRoomService {
 === File: src/main/java/com/falcon/falcon/service/impl/UserServiceImp.java ===
 package com.falcon.falcon.service.impl;
 
-import com.falcon.falcon.dto.RoomDTO;
 import com.falcon.falcon.dto.UserDTO;
-import com.falcon.falcon.entity.Room;
-import com.falcon.falcon.entity.RoomMembership;
-import com.falcon.falcon.exceptions.*;
+import com.falcon.falcon.exceptions.userExceptions.RoleNotFoundException;
+import com.falcon.falcon.exceptions.userExceptions.UserAlreadyExistsException;
 import com.falcon.falcon.mapper.ChallengeMapper;
 import com.falcon.falcon.mapper.RoomMapper;
 import com.falcon.falcon.mapper.UserMapper;
@@ -2198,10 +2246,6 @@ import com.falcon.falcon.repository.UserRepository;
 import com.falcon.falcon.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImp implements UserService {
@@ -2389,10 +2433,7 @@ public interface InstanceService {
 === File: src/main/java/com/falcon/falcon/service/RoomService.java ===
 package com.falcon.falcon.service;
 
-import com.falcon.falcon.dto.ChallengeDTO;
-import com.falcon.falcon.dto.InstanceDTO;
 import com.falcon.falcon.dto.RoomDTO;
-import com.falcon.falcon.dto.UserDTO;
 import com.falcon.falcon.exceptions.roomExceptions.RoomAlreadySavedException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
 
@@ -2403,10 +2444,17 @@ public interface RoomService {
 
     // Done ! ready for tests !!
     List<RoomDTO> getAllRooms();
+
     RoomDTO getRoomById(Long id) throws RoomNotFoundException;
+
     RoomDTO createRoom(RoomDTO roomDTO) throws RoomAlreadySavedException;
+    // incrementJoinedUsers()
+    // decrementJoinedUsers()
+    // incrementRunningInstances()
+    // decrementRunningInstances()
 
     /*
+
     RoomDTO updateRoom(Long id, RoomDTO roomDTO) throws RoomNotFoundException;
 
     List<UserDTO> getUsersInRoom(Long roomId) throws RoomNotFoundException;
@@ -2420,28 +2468,6 @@ public interface RoomService {
 */
 }
 
-/*
-*
-The service provides the following domain operations:
-Room Management:
-Get a list of all rooms.
-Retrieve details of a specific room by its ID (throws an exception if not found).
-Create a new room (with checks against rooms already saved).
-Update an existing room.
-User Operations in a Room:
-Retrieve the list of users present in a room.
-Get the total number of users in a room.
-Instance Operations in a Room:
-Retrieve the list of all instances in a room.
-Get the total count of all instances.
-Retrieve the list of running instances.
-Get the total count of running instances.
-Challenge Operations in a Room:
-Retrieve the list of challenges associated with a room.
-Get the total number of challenges in a room.
-Each of these operations focuses on specific aspects of the Room domain, clearly delineating boundaries for room, user, instance, and challenge management.
-* */
-
 
 === File: src/main/java/com/falcon/falcon/service/TokenService.java ===
 package com.falcon.falcon.service;
@@ -2452,7 +2478,7 @@ import java.util.Collection;
 import java.util.Map;
 
 public interface TokenService {
-    Map<String, String> generateToken(String subject, Collection<? extends GrantedAuthority> roles);
+    Map<String, String> generateToken(String subject,Long userId, Collection<? extends GrantedAuthority> roles);
 }
 
 
@@ -2482,14 +2508,8 @@ public interface UserRoomService {
 === File: src/main/java/com/falcon/falcon/service/UserService.java ===
 package com.falcon.falcon.service;
 
-import com.falcon.falcon.dto.RoomDTO;
 import com.falcon.falcon.dto.UserDTO;
-import com.falcon.falcon.entity.Room;
-import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
 import com.falcon.falcon.exceptions.userExceptions.UserAlreadyExistsException;
-import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
-
-import java.util.List;
 
 // tracks user's relationship with rooms via memberships
 public interface UserService {
@@ -2532,7 +2552,7 @@ public interface VerificationService {
 
 
 
-=== File: src/main/java/com/falcon/falcon/state/impl/NotStartedState.java ===
+=== File: src/main/java/com/falcon/falcon/statePattern/impl/NotStartedState.java ===
 package com.falcon.falcon.statePattern.impl;
 
 import com.falcon.falcon.statePattern.InstanceState;
@@ -2544,7 +2564,7 @@ public class NotStartedState implements InstanceState {
 
 
 
-=== File: src/main/java/com/falcon/falcon/state/impl/PausedState.java ===
+=== File: src/main/java/com/falcon/falcon/statePattern/impl/PausedState.java ===
 package com.falcon.falcon.statePattern.impl;
 
 import com.falcon.falcon.statePattern.InstanceState;
@@ -2556,7 +2576,7 @@ public class PausedState implements InstanceState {
 
 
 
-=== File: src/main/java/com/falcon/falcon/state/impl/RunningState.java ===
+=== File: src/main/java/com/falcon/falcon/statePattern/impl/RunningState.java ===
 package com.falcon.falcon.statePattern.impl;
 
 import com.falcon.falcon.statePattern.InstanceState;
@@ -2568,7 +2588,7 @@ public class RunningState implements InstanceState {
 
 
 
-=== File: src/main/java/com/falcon/falcon/state/impl/TerminatedState.java ===
+=== File: src/main/java/com/falcon/falcon/statePattern/impl/TerminatedState.java ===
 package com.falcon.falcon.statePattern.impl;
 
 import com.falcon.falcon.statePattern.InstanceState;
@@ -2580,7 +2600,7 @@ public class TerminatedState implements InstanceState {
 
 
 
-=== File: src/main/java/com/falcon/falcon/state/InstanceState.java ===
+=== File: src/main/java/com/falcon/falcon/statePattern/InstanceState.java ===
 package com.falcon.falcon.statePattern;
 
 public interface InstanceState {

@@ -66,6 +66,26 @@ public class RoomServiceImpl implements RoomService {
         System.out.println("Saved Room: " + savedRoom);
         return roomMapper.toDTO(savedRoom);
     }
+
+    @Override
+    public void incrementJoinedUsers(Long roomId) throws RoomNotFoundException {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RoomNotFoundException("room not found"));
+        room.setTotalJoinedUsers(room.getTotalJoinedUsers() + 1);
+        roomRepository.save(room);
+        // here we will use the notification system or whatever
+        // Socket notification would go here in the future
+        // roomSubject.notifyObservers(new RoomUpdateEvent(roomId, "USER_LEFT", userId));
+    }
+
+    @Override
+    public void decrementJoinedUsers(Long roomId) throws RoomNotFoundException {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RoomNotFoundException("room not found"));
+        room.setTotalJoinedUsers(room.getTotalJoinedUsers() - 1);
+        roomRepository.save(room);
+        // here we will use the notification system or whatever
+        // Socket notification would go here in the future
+        // roomSubject.notifyObservers(new RoomUpdateEvent(roomId, "USER_LEFT", userId));
+    }
 }
 
 // NOTE 1 :
