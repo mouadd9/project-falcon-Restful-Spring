@@ -21,7 +21,10 @@ public class Room {
 
     private String amiId;
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "complexity")
     private Complexity complexity;

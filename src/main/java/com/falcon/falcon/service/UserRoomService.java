@@ -6,6 +6,7 @@ import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
 import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
 
 import java.util.List;
+import java.util.Map;
 
 // User-room relationship management
 public interface UserRoomService {
@@ -19,4 +20,6 @@ public interface UserRoomService {
     List<RoomDTO> getSavedRooms(Long userId) throws UserNotFoundException; // we use the memberships
     List<RoomDTO> getCompletedRooms(Long userId) throws UserNotFoundException; // this requires knowing if a room is completed or not
     RoomDTO getJoinedRoom(Long userId, Long roomId) throws UserNotFoundException, RoomNotFoundException; // we use the memberships
+
+    Map<String, Boolean> getRoomMembershipStatus(long userId, long roomId); ;
 }

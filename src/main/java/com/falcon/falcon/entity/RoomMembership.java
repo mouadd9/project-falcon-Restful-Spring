@@ -11,6 +11,9 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "room_id"})
+})
 public class RoomMembership {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

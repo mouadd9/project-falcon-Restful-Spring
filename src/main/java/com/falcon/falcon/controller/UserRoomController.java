@@ -3,11 +3,15 @@ package com.falcon.falcon.controller;
 import com.falcon.falcon.dto.RoomDTO;
 import com.falcon.falcon.facadePattern.DomainFacade;
 import com.falcon.falcon.service.UserRoomService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller implementing the Sub-Resource Pattern to manage User-Room relationships.
@@ -42,6 +46,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users") // resource path
 public class UserRoomController {
+    // logger
+    private static final Logger logger = LogManager.getLogger(UserRoomController.class);
     // this Class injects the UserRoomService for User-Room Interaction
     private final UserRoomService userRoomService;
     private final DomainFacade domainFacade;
@@ -95,6 +101,7 @@ public class UserRoomController {
 
     @PostMapping("/{userId}/rooms/{roomId}/leave")
     public ResponseEntity<Void> leaveRoom(@PathVariable long userId, @PathVariable long roomId) {
+        logger.info("user " + userId + " is Leaving room " + roomId);
         userRoomService.leaveRoom(userId, roomId);
         return ResponseEntity.ok().build();
     }
@@ -103,6 +110,12 @@ public class UserRoomController {
     public ResponseEntity<Void> unSaveRoom(@PathVariable long userId, @PathVariable long roomId) {
         userRoomService.unSaveRoom(userId, roomId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{userId}/rooms/{roomId}/status")
+    public ResponseEntity<Map<String, Boolean>> checkRoomStatus(@PathVariable long userId, @PathVariable long roomId) {
+        Map<String, Boolean> status = this.userRoomService.getRoomMembershipStatus(userId, roomId);
+        return new ResponseEntity<>(status, HttpStatus.OK);
     }
 
 }

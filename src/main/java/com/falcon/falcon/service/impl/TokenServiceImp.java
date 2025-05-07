@@ -29,7 +29,7 @@ public class TokenServiceImp implements TokenService {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self") // we issued this token
                 .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plus(30, ChronoUnit.MINUTES))
+                .expiresAt(Instant.now().plus(4, ChronoUnit.HOURS))
                 .subject(subject)
                 .claim("scope", scope)
                 .claim("userId", userId.toString()) // Add the user ID as a claim

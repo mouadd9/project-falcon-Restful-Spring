@@ -16,12 +16,15 @@ import com.falcon.falcon.repository.RoomRepository;
 import com.falcon.falcon.repository.UserRepository;
 import com.falcon.falcon.service.RoomService;
 import com.falcon.falcon.service.UserRoomService;
-import org.springframework.scheduling.annotation.Async;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 /**
@@ -34,6 +37,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class UserRoomServiceImp implements UserRoomService {
+    private static final Logger logger = LogManager.getLogger(UserRoomServiceImp.class);
     private final ChallengeMapper challengeMapper;
     private RoomMapper roomMapper;
     private UserRepository userRepository;
@@ -168,6 +172,7 @@ public class UserRoomServiceImp implements UserRoomService {
                     newRoomMembership.setIsJoined(true);
                     this.roomMembershipRepository.save(newRoomMembership); // then we save the room membership
                     // in the future we should from here signal out to the roomService that a new user has joined a room
+                    this.roomService.incrementJoinedUsers(roomId);
                 }
         );
 
@@ -225,18 +230,31 @@ public class UserRoomServiceImp implements UserRoomService {
     @Override
     @Transactional
     public void leaveRoom(Long userId, Long roomId) throws RoomMembershipNotFoundException {
+        logger.info("leaveRoom() from UserRoomService is called");
+        logger.info("retrieving RoomMembership for user {} with room {}", userId, roomId);
         Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByRoomIdAndUserId(roomId, userId);
         roomMembership.ifPresentOrElse(membership -> { // most likely the room membership will exist (with isJoined set to true) , because teh room shown in the UI is Joined by that user
             // STEP 1 :
+            logger.info("room membership exists");
+            logger.warn("user {} has a relationship with room {} ", userId, roomId);
+            logger.info("its either saved, joined or both , in this case it should definitely be Joined");
+            logger.warn("user has joined room : {}", membership.getIsJoined());
+            logger.warn("user has saved room : {}", membership.getIsSaved());
             this.roomService.decrementJoinedUsers(roomId); // this function will decrement the number of Joined Users and then broadcast the info via sockets to subscribers.
             // STEP 2: [FUTURE] Insert your FlagSubmission clearing logic HERE
             // This is where you'll add the call to clear flag submissions
             // STEP 3 : cases
+            logger.info("we assume the room is joined " + membership.getIsJoined() );
             if (membership.getIsSaved()) { // if the room is Saved
+                logger.info("the room is saved by the user");
+                logger.warn("setting isJoined to false ... ");
                 membership.setIsJoined(false); // we set is Joined to False
                 membership.setChallengesCompleted(0);
+                logger.warn("saving the relationship ... ");
                 this.roomMembershipRepository.save(membership);
             } else { // if the room is not saved, we delete the room membership
+                logger.info("the room is not saved by the user");
+                logger.warn("deleting the relationship ... ");
                 this.roomMembershipRepository.delete(membership);
             }
         }, () -> {
@@ -248,5 +266,23 @@ public class UserRoomServiceImp implements UserRoomService {
     // here in the future we will integrate a user-challenges service
     // responsible for the relationship between users and challenges that will reset challenges progress.
 
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Boolean> getRoomMembershipStatus(long userId, long roomId) {
+
+        Map<String, Boolean> status = new HashMap<>();
+
+        Optional<RoomMembership> membership = roomMembershipRepository.findByRoomIdAndUserId(roomId, userId);
+
+        if (membership.isPresent()) {
+            status.put("isJoined", membership.get().getIsJoined());
+            status.put("isSaved", membership.get().getIsSaved());
+        } else {
+            status.put("isJoined", false);
+            status.put("isSaved", false);
+        }
+
+        return status;
+    }
 
 }

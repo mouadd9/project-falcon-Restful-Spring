@@ -37,3 +37,6 @@ src/main/resources/keys/
 
 # Environment variables
 .env
+
+# code base
+all_java_classes.txt

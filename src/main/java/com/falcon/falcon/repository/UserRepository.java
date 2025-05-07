@@ -11,6 +11,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // in this example we want to check if a user with a given email exists
     // the naming is not arbitrary, it must follow certain rules
     Optional<User> findByEmail(String email); // this returns an Optional that may or may not have a user
+
+    @EntityGraph(attributePaths = {"roles"})
     Optional<User> findByUsername(String username);
 
     // Basic graph - loads only memberships
