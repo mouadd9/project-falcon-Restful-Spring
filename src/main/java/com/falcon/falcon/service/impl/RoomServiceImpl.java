@@ -37,12 +37,19 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     @Transactional(readOnly = true)
-    public RoomDTO getRoomById(Long id) {
-        Room room = roomRepository.findById(id).orElseThrow(()->new RoomNotFoundException("room not found"));
+    public RoomDTO getRoomById(Long id) { // user agnostic Room
+        // Use the repository method with EntityGraph to eagerly fetch challenges
+        Room room = roomRepository.findById(id)
+                .orElseThrow(()->new RoomNotFoundException("room not found"));
+
+        // convert the room to DTO
         RoomDTO roomDTO = roomMapper.toDTO(room);
+
+        // Set the challenges in the DTO
         roomDTO.setChallenges(room.getChallenges().stream()
                 .map(challenge -> challengeMapper.toChallengeDTO(challenge))
                 .collect(Collectors.toList()));
+
         return roomDTO;
     }
 

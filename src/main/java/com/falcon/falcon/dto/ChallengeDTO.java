@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChallengeDTO {
     private Long id;
-    private String flag;
     private String name;
     private String title;
     private String description;

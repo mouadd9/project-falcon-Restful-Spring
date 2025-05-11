@@ -23,7 +23,7 @@ public class RoomController {
     }
 
     @GetMapping("/{roomId}")
-    public ResponseEntity<RoomDTO> getRoomById(@PathVariable Long roomId) {
+    public ResponseEntity<RoomDTO> getRoomDetails(@PathVariable Long roomId) {
         RoomDTO roomDTO = roomService.getRoomById(roomId);
         return new ResponseEntity<>(roomDTO, HttpStatus.OK);
     } // this may generate an exception if the room does not exist (RoomNotFoundException)

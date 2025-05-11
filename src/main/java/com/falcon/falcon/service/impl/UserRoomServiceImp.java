@@ -1,5 +1,6 @@
 package com.falcon.falcon.service.impl;
 
+import com.falcon.falcon.dto.ChallengeDTO;
 import com.falcon.falcon.dto.RoomDTO;
 import com.falcon.falcon.entity.Room;
 import com.falcon.falcon.entity.RoomMembership;
@@ -10,10 +11,7 @@ import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
 import com.falcon.falcon.mapper.ChallengeMapper;
 import com.falcon.falcon.mapper.RoomMapper;
 import com.falcon.falcon.mapper.UserMapper;
-import com.falcon.falcon.repository.RoleRepository;
-import com.falcon.falcon.repository.RoomMembershipRepository;
-import com.falcon.falcon.repository.RoomRepository;
-import com.falcon.falcon.repository.UserRepository;
+import com.falcon.falcon.repository.*;
 import com.falcon.falcon.service.RoomService;
 import com.falcon.falcon.service.UserRoomService;
 import org.apache.logging.log4j.LogManager;
@@ -22,10 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 /**
  * Service responsible for managing user-room relationships and interactions.
@@ -43,12 +38,21 @@ public class UserRoomServiceImp implements UserRoomService {
     private UserRepository userRepository;
     private RoomRepository roomRepository;
     private RoomMembershipRepository roomMembershipRepository;
+    private FlagSubmissionRepository flagSubmissionRepository;
     private RoomService roomService;
 
-    public UserRoomServiceImp(UserRepository userRepository, RoomRepository roomRepository, RoomMembershipRepository roomMembershipRepository, RoleRepository roleRepository, PasswordEncoder bCryptPasswordEncoder, UserMapper userMapper, RoomMapper roomMapper, ChallengeMapper challengeMapper, RoomService roomService) {
+    public UserRoomServiceImp(
+            UserRepository userRepository,
+            RoomRepository roomRepository,
+            RoomMembershipRepository roomMembershipRepository,
+            FlagSubmissionRepository flagSubmissionRepository,
+            RoomMapper roomMapper,
+            ChallengeMapper challengeMapper,
+            RoomService roomService) {
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
         this.roomMembershipRepository = roomMembershipRepository;
+        this.flagSubmissionRepository = flagSubmissionRepository;
         this.challengeMapper = challengeMapper;
         this.roomMapper = roomMapper;
         this.roomService = roomService;
@@ -130,20 +134,36 @@ public class UserRoomServiceImp implements UserRoomService {
     @Transactional(readOnly = true)
     public RoomDTO getJoinedRoom(Long userId, Long roomId) throws UserNotFoundException, RoomNotFoundException {
         // here we will fetch The User, and then we will search for the room in the memberships
-        User user = this.userRepository.findUserWithMembershipsAndRoomsAndChallengesById(userId).orElseThrow(()->new UserNotFoundException("user not found"));
-        // now we will search for the room in the memberships
-        return user.getMemberships().stream()
+        User user = this.userRepository.findUserWithMembershipsAndRoomsAndChallengesById(userId) // !!! heavy query
+                .orElseThrow(()->new UserNotFoundException("user not found"));
+
+        // we find the first membership that has the passed roomId (the only that exists)
+        RoomMembership membership = user.getMemberships().stream()
                 .filter(rm -> rm.getRoom().getId().equals(roomId))
-                .map(rm -> {
-                    Room room = rm.getRoom();
-                    RoomDTO roomDTO = roomMapper.toUserSpecificDTO(room, rm);
-                    roomDTO.setChallenges(room.getChallenges().stream()
-                            .map(challenge -> challengeMapper.toChallengeDTO(challenge))
-                            .collect(Collectors.toList()));
-                    return roomDTO;
-                })
                 .findFirst()
-                .orElseThrow(()->new RoomNotFoundException("room not found")); // this unwraps the Optional and throws the exception if not found
+                .orElseThrow(()->new RoomNotFoundException("room not found"));
+
+        // Get the room and create DTO with user-specific data
+        Room room = membership.getRoom();
+        RoomDTO roomDTO = roomMapper.toUserSpecificDTO(room, membership);
+
+        // 4. Convert all challenges to DTOs
+        List<ChallengeDTO> challengeDTOs = room.getChallenges().stream()
+                .map(challengeMapper::toChallengeDTO)
+                .collect(Collectors.toList());
+
+        // 5. Get IDs of challenges the user has completed in this room
+        Set<Long> completedChallengeIds = flagSubmissionRepository
+                .findCompletedChallengeIdsByUserIdAndRoomId(userId, roomId);
+
+        // 6. Mark challenges as completed based on the IDs
+        challengeDTOs.forEach(challenge ->
+                challenge.setCompleted(completedChallengeIds.contains(challenge.getId())));
+
+        // 7. Add the challenges to the room DTO
+        roomDTO.setChallenges(challengeDTOs);
+
+        return roomDTO;
     }
 
     @Override
@@ -230,31 +250,18 @@ public class UserRoomServiceImp implements UserRoomService {
     @Override
     @Transactional
     public void leaveRoom(Long userId, Long roomId) throws RoomMembershipNotFoundException {
-        logger.info("leaveRoom() from UserRoomService is called");
-        logger.info("retrieving RoomMembership for user {} with room {}", userId, roomId);
         Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByRoomIdAndUserId(roomId, userId);
         roomMembership.ifPresentOrElse(membership -> { // most likely the room membership will exist (with isJoined set to true) , because teh room shown in the UI is Joined by that user
             // STEP 1 :
-            logger.info("room membership exists");
-            logger.warn("user {} has a relationship with room {} ", userId, roomId);
-            logger.info("its either saved, joined or both , in this case it should definitely be Joined");
-            logger.warn("user has joined room : {}", membership.getIsJoined());
-            logger.warn("user has saved room : {}", membership.getIsSaved());
             this.roomService.decrementJoinedUsers(roomId); // this function will decrement the number of Joined Users and then broadcast the info via sockets to subscribers.
             // STEP 2: [FUTURE] Insert your FlagSubmission clearing logic HERE
             // This is where you'll add the call to clear flag submissions
             // STEP 3 : cases
-            logger.info("we assume the room is joined " + membership.getIsJoined() );
             if (membership.getIsSaved()) { // if the room is Saved
-                logger.info("the room is saved by the user");
-                logger.warn("setting isJoined to false ... ");
                 membership.setIsJoined(false); // we set is Joined to False
                 membership.setChallengesCompleted(0);
-                logger.warn("saving the relationship ... ");
                 this.roomMembershipRepository.save(membership);
             } else { // if the room is not saved, we delete the room membership
-                logger.info("the room is not saved by the user");
-                logger.warn("deleting the relationship ... ");
                 this.roomMembershipRepository.delete(membership);
             }
         }, () -> {

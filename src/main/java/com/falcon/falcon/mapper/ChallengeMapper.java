@@ -11,9 +11,9 @@ public class ChallengeMapper {
         return ChallengeDTO.builder()
                 .id(challenge.getId())
                 .name(challenge.getName())
-                .flag(null)
                 .title(challenge.getTitle())
                 .description(challenge.getDescription())
+                .isCompleted(false) // Default to false for user-agnostic view
                 .build();
     }
 
@@ -22,7 +22,6 @@ public class ChallengeMapper {
                 .name(challengeDTO.getName())
                 .title(challengeDTO.getTitle())
                 .description(challengeDTO.getDescription())
-                .flag(challengeDTO.getFlag())
                 .build();
     }
 }
