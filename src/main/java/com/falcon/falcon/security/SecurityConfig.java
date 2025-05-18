@@ -1,6 +1,6 @@
 package com.falcon.falcon.security;
 
-import com.falcon.falcon.service.impl.CustomUserDetailsService;
+import com.falcon.falcon.services.impl.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
