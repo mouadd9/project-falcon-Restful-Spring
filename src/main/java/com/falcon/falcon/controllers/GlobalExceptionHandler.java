@@ -4,6 +4,7 @@ import com.falcon.falcon.dtos.ErrorResponse;
 import com.falcon.falcon.exceptions.authExceptions.CodeExpiredException;
 import com.falcon.falcon.exceptions.authExceptions.EmaiNotVerifiedOrRequestIdNotValid;
 import com.falcon.falcon.exceptions.authExceptions.VerificationCodeInvalid;
+import com.falcon.falcon.exceptions.challengeExceptions.ChallengeNotFoundException;
 import com.falcon.falcon.exceptions.membershipExceptions.RoomMembershipNotFoundException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomAlreadySavedException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
@@ -147,6 +148,17 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 "ROOM_MEMBERSHIP_NOT_FOUND",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(ChallengeNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleChallengeNotFoundException(ChallengeNotFoundException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "CHALLENGE_NOT_FOUND",
                 ex.getMessage(),
                 request.getDescription(false)
         );

@@ -91,4 +91,7 @@ public interface RoomEnrollmentFacade {
      * @return A map containing status flags
      */
     Map<String, Boolean> getRoomMembershipStatus(Long userId, Long roomId);
+
+    void resetRoomProgress(Long userId, Long roomId);
+
 }

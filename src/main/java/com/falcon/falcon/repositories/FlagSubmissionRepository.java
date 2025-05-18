@@ -2,9 +2,11 @@ package com.falcon.falcon.repositories;
 
 import com.falcon.falcon.entities.FlagSubmission;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
 import java.util.Set;
 
 public interface FlagSubmissionRepository extends JpaRepository<FlagSubmission, Long> {
@@ -36,4 +38,22 @@ public interface FlagSubmissionRepository extends JpaRepository<FlagSubmission, 
     @Query("SELECT fs.challenge.id FROM FlagSubmission fs WHERE fs.user.id = :userId AND fs.challenge.room.id = :roomId AND fs.isCorrect = true")
     Set<Long> findCompletedChallengeIdsByUserIdAndRoomId(@Param("userId") Long userId, @Param("roomId") Long roomId);
 
+    /**
+     * Finds a flag submission by user ID and challenge ID
+     */
+    @Query("SELECT fs FROM FlagSubmission fs WHERE fs.user.id = :userId AND fs.challenge.id = :challengeId")
+    Optional<FlagSubmission> findByUserIdAndChallengeId(@Param("userId") Long userId, @Param("challengeId") Long challengeId);
+
+    /**
+     * Finds all challenge IDs from a room that a user has submitted flags for
+     */
+    @Query("SELECT fs.challenge.id FROM FlagSubmission fs WHERE fs.user.id = :userId AND fs.challenge.room.id = :roomId")
+    Set<Long> findChallengeIdsByUserIdAndRoomId(@Param("userId") Long userId, @Param("roomId") Long roomId);
+
+    /**
+     * Deletes flag submissions by user ID and a set of challenge IDs
+     */
+    @Modifying
+    @Query("DELETE FROM FlagSubmission fs WHERE fs.user.id = :userId AND fs.challenge.id IN :challengeIds")
+    void deleteByUserIdAndChallengeIdIn(@Param("userId") Long userId, @Param("challengeIds") Set<Long> challengeIds);
 }

@@ -1,6 +1,7 @@
 package com.falcon.falcon.facades.impl;
 
 import com.falcon.falcon.dtos.RoomDTO;
+import com.falcon.falcon.facades.ChallengeProgressionFacade;
 import com.falcon.falcon.facades.RoomEnrollmentFacade;
 import com.falcon.falcon.services.RoomService;
 import com.falcon.falcon.services.UserRoomService;
@@ -15,10 +16,14 @@ import java.util.stream.Collectors;
 public class RoomEnrollmentFacadeIml implements RoomEnrollmentFacade {
     private final UserRoomService userRoomService;
     private final RoomService roomService;
+    private final ChallengeProgressionFacade challengeProgressionFacade;
 
-    public RoomEnrollmentFacadeIml(RoomService roomService, UserRoomService userRoomService) {
+    public RoomEnrollmentFacadeIml(RoomService roomService,
+                                   UserRoomService userRoomService,
+                                   ChallengeProgressionFacade challengeProgressionFacade) {
         this.userRoomService = userRoomService;
         this.roomService = roomService;
+        this.challengeProgressionFacade = challengeProgressionFacade;
     }
 
     /**
@@ -119,4 +124,9 @@ public class RoomEnrollmentFacadeIml implements RoomEnrollmentFacade {
         return userRoomService.getRoomMembershipStatus(userId, roomId);
     }
 
+    @Override
+    public void resetRoomProgress(Long userId, Long roomId) {
+        // Use the challenge progression facade to reset progress
+        challengeProgressionFacade.resetChallengeProgress(userId, roomId);
+    }
 }
