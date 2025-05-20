@@ -11,6 +11,7 @@ import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
 import com.falcon.falcon.mappers.ChallengeMapper;
 import com.falcon.falcon.mappers.RoomMapper;
 import com.falcon.falcon.repositories.*;
+import com.falcon.falcon.services.FlagSubmissionService;
 import com.falcon.falcon.services.RoomService;
 import com.falcon.falcon.services.UserRoomService;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class UserRoomServiceImp implements UserRoomService {
     private RoomMembershipRepository roomMembershipRepository;
     private FlagSubmissionRepository flagSubmissionRepository;
     private RoomService roomService;
+    private FlagSubmissionService flagSubmissionService;
 
     public UserRoomServiceImp(
             UserRepository userRepository,
@@ -42,7 +44,9 @@ public class UserRoomServiceImp implements UserRoomService {
             FlagSubmissionRepository flagSubmissionRepository,
             RoomMapper roomMapper,
             ChallengeMapper challengeMapper,
-            RoomService roomService) {
+            RoomService roomService,
+            FlagSubmissionService flagSubmissionService) {
+        this.flagSubmissionService = flagSubmissionService;
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
         this.roomMembershipRepository = roomMembershipRepository;
@@ -242,6 +246,7 @@ public class UserRoomServiceImp implements UserRoomService {
             this.roomService.decrementJoinedUsers(roomId); // this function will decrement the number of Joined Users and then broadcast the info via sockets to subscribers.
             // STEP 2: [FUTURE] Insert your FlagSubmission clearing logic HERE
             // This is where you'll add the call to clear flag submissions
+            this.flagSubmissionService.deleteSubmissionsForUserAndRoom(userId, roomId);
             // STEP 3 : cases
             if (membership.getIsSaved()) { // if the room is Saved
                 membership.setIsJoined(false); // we set is Joined to False

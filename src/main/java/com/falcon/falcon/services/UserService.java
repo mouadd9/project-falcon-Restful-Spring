@@ -2,7 +2,6 @@ package com.falcon.falcon.services;
 
 import com.falcon.falcon.dtos.UserDTO;
 import com.falcon.falcon.exceptions.userExceptions.UserAlreadyExistsException;
-import com.falcon.falcon.exceptions.userExceptions.UserNotFoundException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 // User management

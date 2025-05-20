@@ -12,7 +12,6 @@ import com.falcon.falcon.repositories.RoomMembershipRepository;
 import com.falcon.falcon.repositories.UserRepository;
 import com.falcon.falcon.services.FlagSubmissionService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.Optional;
