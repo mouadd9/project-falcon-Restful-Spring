@@ -1,9 +1,9 @@
-package com.falcon.falcon.controller;
+package com.falcon.falcon.controllers;
 
-import com.falcon.falcon.dto.cloudDto.CreateInstanceResponse;
-import com.falcon.falcon.dto.cloudDto.InstanceActionRequest;
-import com.falcon.falcon.dto.cloudDto.InstanceActionResponse;
-import com.falcon.falcon.service.impl.Ec2Service;
+import com.falcon.falcon.dtos.cloudDto.CreateInstanceResponse;
+import com.falcon.falcon.dtos.cloudDto.InstanceActionRequest;
+import com.falcon.falcon.dtos.cloudDto.InstanceActionResponse;
+import com.falcon.falcon.services.impl.Ec2Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;

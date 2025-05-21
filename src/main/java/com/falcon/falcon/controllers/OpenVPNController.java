@@ -1,6 +1,6 @@
-package com.falcon.falcon.controller;
+package com.falcon.falcon.controllers;
 
-import com.falcon.falcon.service.impl.OpenVPNServiceImpl;
+import com.falcon.falcon.services.impl.OpenVPNServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;

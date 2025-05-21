@@ -1,7 +1,7 @@
-package com.falcon.falcon.service.impl;
+package com.falcon.falcon.services.impl;
 
-import com.falcon.falcon.dto.cloudDto.CreateInstanceResponse;
-import com.falcon.falcon.dto.cloudDto.InstanceActionResponse;
+import com.falcon.falcon.dtos.cloudDto.CreateInstanceResponse;
+import com.falcon.falcon.dtos.cloudDto.InstanceActionResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2AsyncClient;
 import software.amazon.awssdk.services.ec2.model.RunInstancesRequest;
