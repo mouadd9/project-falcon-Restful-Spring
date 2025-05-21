@@ -40,3 +40,5 @@ src/main/resources/keys/
 
 # code base
 all_java_classes.txt
+
+logs/app.log
