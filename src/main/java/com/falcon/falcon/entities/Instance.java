@@ -22,6 +22,9 @@ public class Instance {
     private String instanceId;
     private Date launchDate;
     private Date expirationDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     private InstanceStateEnum instanceState;
     // private String AMIid;
 
