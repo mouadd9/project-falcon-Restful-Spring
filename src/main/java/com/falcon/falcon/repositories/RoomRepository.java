@@ -10,4 +10,5 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @EntityGraph(attributePaths = {"challenges"})
     Optional<Room> findRoomWithChallengesById(Long id); // this fetches a room and all its challenges and returns an Optional with the room object with a list of fetched challenges
     boolean existsByAmiId(String amiId); // this checks if a room with the same amiId already exists
+    // Optional<Room> findById(Long roomId); // Added findByRoomId method
 }

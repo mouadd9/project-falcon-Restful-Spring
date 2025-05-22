@@ -5,6 +5,11 @@ import com.falcon.falcon.exceptions.authExceptions.CodeExpiredException;
 import com.falcon.falcon.exceptions.authExceptions.EmaiNotVerifiedOrRequestIdNotValid;
 import com.falcon.falcon.exceptions.authExceptions.VerificationCodeInvalid;
 import com.falcon.falcon.exceptions.challengeExceptions.ChallengeNotFoundException;
+import com.falcon.falcon.exceptions.instanceExceptions.InstanceConfigurationException;
+import com.falcon.falcon.exceptions.instanceExceptions.InstanceNotFoundException;
+import com.falcon.falcon.exceptions.instanceExceptions.InstanceOperationFailedException;
+import com.falcon.falcon.exceptions.instanceExceptions.InstanceProvisioningException;
+import com.falcon.falcon.exceptions.instanceExceptions.InvalidInstanceStateException;
 import com.falcon.falcon.exceptions.membershipExceptions.RoomMembershipNotFoundException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomAlreadySavedException;
 import com.falcon.falcon.exceptions.roomExceptions.RoomNotFoundException;
@@ -165,6 +170,60 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
+    // Instance exception handlers
+    @ExceptionHandler(InstanceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleInstanceNotFoundException(InstanceNotFoundException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "INSTANCE_NOT_FOUND",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
 
+    @ExceptionHandler(InstanceProvisioningException.class)
+    public ResponseEntity<ErrorResponse> handleInstanceProvisioningException(InstanceProvisioningException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "INSTANCE_PROVISIONING_FAILED",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(InvalidInstanceStateException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidInstanceStateException(InvalidInstanceStateException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_INSTANCE_STATE",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InstanceOperationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleInstanceOperationFailedException(InstanceOperationFailedException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "INSTANCE_OPERATION_FAILED",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(InstanceConfigurationException.class)
+    public ResponseEntity<ErrorResponse> handleInstanceConfigurationException(InstanceConfigurationException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "INSTANCE_CONFIGURATION_ERROR",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
 
 }
