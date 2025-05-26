@@ -19,6 +19,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+
 // this class will provide a bean of a configured securityFilterChain, the filter chain is configured to validate the access-tokens for all the requests that require validation.
 // we add a jwt validator to the filter chain.
 // we aldo provide a decoder bean that uses the public key to verify if requests are valid. this bean is used by the OAuth2 resource server validator to check the validity of access-tokens
@@ -53,6 +55,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(ar -> {
                     ar.requestMatchers("/auth/**").permitAll();
                     ar.requestMatchers("/api/**").permitAll();
+                    ar.requestMatchers("/ws/**").permitAll(); // Allow WebSocket connections
                     ar.anyRequest().authenticated();
                     System.out.println("Security configuration applied: /auth/** is permitted");
                 })
@@ -73,32 +76,29 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
 
-
-
-
-
-
-    // handling requests coming from browsers with CORS
+    // FIXED: Updated CORS configuration to handle WebSocket with credentials
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
-        /*Cross-Origin Resource Sharing (CORS) is a security
-         feature that allows browser-based requests using AJAX.
-         CORS helps keep web interactions secure while allowing
-         necessary communication between different websites.*/
-        CorsConfiguration corsConfiguration = new CorsConfiguration(); // a class provided by Spring that holds the CORS configuration settings
-        // we will allow all origins to access our apis
-        corsConfiguration.addAllowedOrigin("*");
-        // This allows all HTTP methods (GET, POST, PUT, DELETE, etc.) from any origin to be executed.
-        corsConfiguration.addAllowedMethod("*");
-        // This allows any HTTP header to be included in the request from the client.
-        corsConfiguration.addAllowedHeader("*");
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        
+        // CRITICAL CHANGE: Use specific origins instead of wildcard
+        // For development
+        corsConfiguration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        
+        // For production, you would add your production domain:
+        // corsConfiguration.setAllowedOrigins(Arrays.asList("http://localhost:4200", "https://yourdomain.com"));
+        
+        // Alternative: Use origin patterns if you need multiple localhost ports
+        // corsConfiguration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
+        
+        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // CRITICAL: Enable credentials support
+        corsConfiguration.setAllowCredentials(true);
 
-        // corsConfiguration.setExposedHeaders(List.of("x-auth-token"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
         return source;
     }
-
-
-
 }

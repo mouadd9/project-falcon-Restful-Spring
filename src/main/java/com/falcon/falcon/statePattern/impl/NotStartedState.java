@@ -32,10 +32,12 @@ public class NotStartedState implements InstanceState {
      *
      * @param instanceContext The instance entity (context).
      * @param cloudService    The service used to interact with the cloud provider.
+     * @param userId          The ID of the user initiating the operation.
+     * @param operationId     The ID of the operation being performed.
      * @return A CompletableFuture completed with a response indicating the operation is not supported for this state.
      */
     @Override
-    public CompletableFuture<InstanceActionResponse> startInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    public CompletableFuture<InstanceActionResponse> startInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         String instanceIdentifier = instanceContext.getInstanceId() != null ? instanceContext.getInstanceId() : "[DB ID: " + instanceContext.getId() + "]";
         String message = String.format("Cannot start instance %s; it is in NOT_STARTED state. Instance must be created on the cloud provider first.", instanceIdentifier);
         logger.warn(message);
@@ -49,10 +51,12 @@ public class NotStartedState implements InstanceState {
      *
      * @param instanceContext The instance entity (context).
      * @param cloudService    The service used to interact with the cloud provider.
+     * @param userId          The ID of the user initiating the operation.
+     * @param operationId     The ID of the operation being performed.
      * @return A CompletableFuture completed with a response indicating the operation is not supported for this state.
      */
     @Override
-    public CompletableFuture<InstanceActionResponse> stopInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    public CompletableFuture<InstanceActionResponse> stopInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         String instanceIdentifier = instanceContext.getInstanceId() != null ? instanceContext.getInstanceId() : "[DB ID: " + instanceContext.getId() + "]";
         String message = String.format("Cannot stop instance %s; it is in NOT_STARTED state.", instanceIdentifier);
         logger.warn(message);
@@ -68,10 +72,12 @@ public class NotStartedState implements InstanceState {
      *
      * @param instanceContext The instance entity (context).
      * @param cloudService    The service used to interact with the cloud provider.
+     * @param userId          The ID of the user initiating the operation.
+     * @param operationId     The ID of the operation being performed.
      * @return A CompletableFuture completed with a response indicating the operation is not supported for this state.
      */
     @Override
-    public CompletableFuture<InstanceActionResponse> terminateInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    public CompletableFuture<InstanceActionResponse> terminateInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         String instanceIdentifier = instanceContext.getInstanceId() != null ? instanceContext.getInstanceId() : "[DB ID: " + instanceContext.getId() + "]";
         String message = String.format("Cannot terminate instance %s via cloud provider; it is in NOT_STARTED state and likely does not exist on the cloud.", instanceIdentifier);
         logger.warn(message);

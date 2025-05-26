@@ -18,13 +18,13 @@ public class PausedState implements InstanceState {
     private static final Logger logger = LoggerFactory.getLogger(PausedState.class);
 
     @Override
-    public CompletableFuture<InstanceActionResponse> startInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    public CompletableFuture<InstanceActionResponse> startInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         logger.info("Starting instance {} from PAUSED state.", instanceContext.getInstanceId());
-        return cloudService.startInstance(instanceContext.getInstanceId()); // we handle exceptions here !!
+        return cloudService.startInstance(instanceContext.getInstanceId(), userId, operationId, instanceContext.getId().toString());
     }
 
     @Override
-    public CompletableFuture<InstanceActionResponse> stopInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    public CompletableFuture<InstanceActionResponse> stopInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         logger.info("Attempted to stop instance {} which is already PAUSED (stopped).", instanceContext.getInstanceId());
         String instanceIdentifier = instanceContext.getInstanceId() != null ? instanceContext.getInstanceId() : "[DB ID: " + instanceContext.getId() + "]";
         String message = String.format("Cannot stop instance %s via cloud provider; it is in PAUSED state.", instanceIdentifier);
@@ -34,9 +34,9 @@ public class PausedState implements InstanceState {
     }
 
     @Override
-    public CompletableFuture<InstanceActionResponse> terminateInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    public CompletableFuture<InstanceActionResponse> terminateInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         logger.info("Terminating instance {} from PAUSED state.", instanceContext.getInstanceId());
-        return cloudService.terminateInstance(instanceContext.getInstanceId());
+        return cloudService.terminateInstance(instanceContext.getInstanceId(), userId, operationId, instanceContext.getId().toString());
     }
 
     @Override

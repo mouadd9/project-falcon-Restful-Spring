@@ -12,20 +12,22 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CompletableFuture;
 
-@Component("terminatedStateBean") // Added bean name
+@Component("terminatedStateBean")
 public class TerminatedState implements InstanceState {
 
     private static final Logger logger = LoggerFactory.getLogger(TerminatedState.class);
 
     @Override
-    public CompletableFuture<InstanceActionResponse> startInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    public CompletableFuture<InstanceActionResponse> startInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         String message = String.format("Cannot start instance %s; it is in TERMINATED state.", instanceContext.getInstanceId());
         logger.warn(message);
         
         // Throw an InvalidInstanceStateException to be caught by the global exception handler
         throw new InvalidInstanceStateException(message, instanceContext.getInstanceId(), InstanceStateEnum.TERMINATED, "start");
-    }    @Override
-    public CompletableFuture<InstanceActionResponse> stopInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    }
+
+    @Override
+    public CompletableFuture<InstanceActionResponse> stopInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         String message = String.format("Cannot stop instance %s; it is in TERMINATED state.", instanceContext.getInstanceId());
         logger.warn(message);
         
@@ -34,7 +36,7 @@ public class TerminatedState implements InstanceState {
     }
 
     @Override
-    public CompletableFuture<InstanceActionResponse> terminateInstance(Instance instanceContext, CloudInstanceService cloudService) {
+    public CompletableFuture<InstanceActionResponse> terminateInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId) {
         logger.info("Attempted to terminate instance {} which is already TERMINATED.", instanceContext.getInstanceId());
         String instanceIdentifier = instanceContext.getInstanceId() != null ? instanceContext.getInstanceId() : "[DB ID: " + instanceContext.getId() + "]";
         String message = String.format("Cannot terminate instance %s via cloud provider; it is in TERMINATED state.", instanceIdentifier);

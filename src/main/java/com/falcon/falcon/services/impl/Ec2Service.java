@@ -2,6 +2,7 @@ package com.falcon.falcon.services.impl;
 
 import com.falcon.falcon.dtos.cloudDto.CreateInstanceResponse;
 import com.falcon.falcon.dtos.cloudDto.InstanceActionResponse;
+import com.falcon.falcon.dtos.websocket.InstanceOperationUpdate;
 import com.falcon.falcon.services.CloudInstanceService;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2AsyncClient;
@@ -26,6 +27,9 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
+import com.falcon.falcon.services.websocket.InstanceWebSocketService;
+
+
 @Service
 public class Ec2Service implements CloudInstanceService {
 
@@ -36,9 +40,10 @@ public class Ec2Service implements CloudInstanceService {
      * All operations return CompletableFuture objects, making it perfect for high-throughput applications.
     */
     private final Ec2AsyncClient ec2AsyncClient;
+    private final InstanceWebSocketService webSocketService;
 
-    public Ec2Service() {
-
+    public Ec2Service(InstanceWebSocketService webSocketService) {
+        this.webSocketService = webSocketService;
         /*
         ## Explanation of the HTTP Client and Async Client
          * An HTTP client takes your request to communicate with a web service (like AWS)
@@ -140,15 +145,15 @@ public class Ec2Service implements CloudInstanceService {
      * This is crucial because creating an EC2 instance isn't instantaneous.
      * It's a complex process that can take anywhere from 30 seconds to several minutes,
      * depending on the instance type, AMI size, and current AWS load.
-     */
+    */
 
     /*
      * By returning a CompletableFuture, this method follows the same non-blocking pattern we discussed earlier.
      * The calling code can initiate the instance creation and then continue with other work while AWS handles
      * the heavy lifting of actually provisioning the virtual machine.
      */
-    public CompletableFuture<CreateInstanceResponse> createInstance(String amiId) { // Takes an AMI ID as input.
-        logger.info("Creating EC2 instance with AMI ID: {}", amiId);
+    public CompletableFuture<CreateInstanceResponse> createInstance(String amiId, String userId, String operationId, String localInstanceId) { // Takes an AMI ID as input.
+        logger.info("Creating EC2 instance with AMI ID: {}, User ID: {}, Operation ID: {}, Local Instance ID: {}", amiId, userId, operationId, localInstanceId);
 
         // Builds a RunInstancesRequest with hardcoded parameters for now
         // Hard-coded parameters for now; amiId is provided as input
@@ -174,27 +179,33 @@ public class Ec2Service implements CloudInstanceService {
          * The real elegance of this code lies in how it chains these asynchronous operations together using thenCompose. Each operation waits for the previous one to complete before starting the next step. However, importantly, none of these operations block your application's threads.
          */
                 .thenCompose(response -> { // AWS immediately responds with a confirmation that includes basic information about the instance, including its assigned instance ID.
-                    String instanceIdVal = response.instances().get(0).instanceId();
-                    logger.info("Creating Instance with ID: {}", instanceIdVal);
+                    String cloudEc2InstanceId = response.instances().get(0).instanceId();
+                    logger.info("Creating Instance with ID: {}", cloudEc2InstanceId);
                     String privateIpAddress = response.instances().get(0).privateIpAddress();
+
+                    //  3. PROVISIONING (50% progress) - AWS resources allocated
+                    webSocketService.sendCustomUpdateToOwner(
+                        userId,
+                        InstanceOperationUpdate.provisioning(operationId, localInstanceId)
+                    );
 
                     // Continue waiting until instance is running
                     // At this point, AWS has accepted your request and assigned resources, but the actual virtual machine is still being created.
-                    logger.info("Waiting for instance to exist: {}", instanceIdVal);
+                    logger.info("Waiting for instance to exist: {}", cloudEc2InstanceId);
 
                     // Note: how do you know when an asynchronous operation has actually completed? The instance creation response tells you the operation has started, but not when it's finished.
                     // The AWS SDK provides elegant "waiter" functionality to solve this problem.
                     // Waiters are specialized tools that repeatedly check the status of a resource until it reaches a desired state.
                     return ec2AsyncClient.waiter() // First waiter
-                            .waitUntilInstanceExists(r -> r.instanceIds(instanceIdVal)) // keeps checking for Instance Existence
+                            .waitUntilInstanceExists(r -> r.instanceIds(cloudEc2InstanceId)) // keeps checking for Instance Existence
                             .thenCompose(waitResponse -> { // if instance exists, we need to wait for it to be in a running state
-                                logger.info("Instance exists, waiting for running state: {}", instanceIdVal);
+                                logger.info("Instance exists, waiting for running state: {}", cloudEc2InstanceId);
                                 return ec2AsyncClient.waiter() // second waiter
-                                        .waitUntilInstanceRunning(r -> r.instanceIds(instanceIdVal)) // keeps checking for Instance Running
+                                        .waitUntilInstanceRunning(r -> r.instanceIds(cloudEc2InstanceId)) // keeps checking for Instance Running
                                         .thenApply(runningResponse -> { // if instance is running, we can return the response
-                                            logger.info("Instance is now running: {}", instanceIdVal);
+                                            logger.info("Instance is now running: {}", cloudEc2InstanceId);
                                             CreateInstanceResponse resp = CreateInstanceResponse.builder()
-                                                .instanceId(instanceIdVal)
+                                                .instanceId(cloudEc2InstanceId)
                                                 .privateIpAddress(privateIpAddress)
                                                 .build();
                                             return resp;
@@ -209,19 +220,32 @@ public class Ec2Service implements CloudInstanceService {
     }
     
     @Override
-    public CompletableFuture<InstanceActionResponse> stopInstance(String instanceId) {
+    public CompletableFuture<InstanceActionResponse> stopInstance(String instanceId, String userId, String operationId, String localInstanceId) {
         logger.info("Stopping EC2 instance: {}", instanceId);
         StopInstancesRequest request = StopInstancesRequest.builder()
                 .instanceIds(instanceId)
                 .build();
 
         return ec2AsyncClient.stopInstances(request)
-                .thenApply(response -> {
-                    logger.info("Successfully stopped instance: {}", instanceId);
-
-                    InstanceActionResponse actionResponse = new InstanceActionResponse();
-                    actionResponse.setInstanceId(instanceId);
-                    return actionResponse;
+                .thenCompose(response -> {
+                    logger.info("Stop request accepted for instance: {}, waiting for instance to actually stop...", instanceId);
+                    
+                    // Send intermediate update - stopping in progress
+                    webSocketService.sendCustomUpdateToOwner(
+                        userId,
+                        InstanceOperationUpdate.stopping(operationId, localInstanceId)
+                    );
+                    
+                    // ✅ WAIT for the instance to actually stop before returning success
+                    return ec2AsyncClient.waiter()
+                            .waitUntilInstanceStopped(r -> r.instanceIds(instanceId))
+                            .thenApply(waitResponse -> {
+                                logger.info("Instance {} has actually stopped", instanceId);
+                                
+                                InstanceActionResponse actionResponse = new InstanceActionResponse();
+                                actionResponse.setInstanceId(instanceId);
+                                return actionResponse;
+                            });
                 })
                 .exceptionally(throwable -> {
                     logger.error("Failed to stop instance {}: {}", instanceId, throwable.getMessage(), throwable);
@@ -235,7 +259,7 @@ public class Ec2Service implements CloudInstanceService {
     }
 
     @Override
-    public CompletableFuture<InstanceActionResponse> startInstance(String instanceId) {
+    public CompletableFuture<InstanceActionResponse> startInstance(String instanceId, String userId, String operationId, String localInstanceId) {
         logger.info("Starting EC2 instance: {}", instanceId);
         StartInstancesRequest request = StartInstancesRequest.builder()
                 .instanceIds(instanceId)
@@ -244,7 +268,11 @@ public class Ec2Service implements CloudInstanceService {
         return ec2AsyncClient.startInstances(request)
                 .thenCompose(response -> {
                     logger.info("Successfully started instance: {}", instanceId);
-
+                    //  3. STARTING (50% progress) - AWS resources allocated
+                    webSocketService.sendCustomUpdateToOwner(
+                        userId,
+                        InstanceOperationUpdate.starting(operationId, localInstanceId)
+                    );
                     // Create a request to get the instance details including IP address
                     // the IP address changes !!!!!
                     DescribeInstancesRequest describeRequest = DescribeInstancesRequest.builder()
@@ -284,20 +312,33 @@ public class Ec2Service implements CloudInstanceService {
     }
 
     @Override
-    public CompletableFuture<InstanceActionResponse> terminateInstance(String instanceId) {
+    public CompletableFuture<InstanceActionResponse> terminateInstance(String instanceId, String userId, String operationId, String localInstanceId) {
         logger.info("Terminating EC2 instance: {}", instanceId);
         TerminateInstancesRequest request = TerminateInstancesRequest.builder()
                 .instanceIds(instanceId)
                 .build();
 
         return ec2AsyncClient.terminateInstances(request)
-                .thenApply(response -> {
-                    logger.info("Successfully terminated instance: {}", instanceId);
-
-                    InstanceActionResponse actionResponse = InstanceActionResponse.builder()
-                            .instanceId(instanceId)
-                            .build();
-                    return actionResponse;
+                .thenCompose(response -> {
+                    logger.info("Terminate request accepted for instance: {}, waiting for instance to actually terminate...", instanceId);
+                    
+                    // Send intermediate update
+                    webSocketService.sendCustomUpdateToOwner(
+                        userId,
+                        InstanceOperationUpdate.terminating(operationId, localInstanceId)
+                    );
+                    
+                    // ✅ WAIT for the instance to actually terminate
+                    return ec2AsyncClient.waiter()
+                            .waitUntilInstanceTerminated(r -> r.instanceIds(instanceId))
+                            .thenApply(waitResponse -> {
+                                logger.info("Instance {} has actually terminated", instanceId);
+                                
+                                InstanceActionResponse actionResponse = InstanceActionResponse.builder()
+                                        .instanceId(instanceId)
+                                        .build();
+                                return actionResponse;
+                            });
                 })
                 .exceptionally(throwable -> {
                     logger.error("Failed to terminate instance {}: {}", instanceId, throwable.getMessage(), throwable);

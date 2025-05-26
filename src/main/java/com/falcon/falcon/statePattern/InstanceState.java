@@ -21,9 +21,11 @@ public interface InstanceState {
      *
      * @param instanceContext The instance entity (context) on which the action is performed.
      * @param cloudService    The service used to interact with the cloud provider.
+     * @param userId          The ID of the user performing the operation.
+     * @param operationId     The unique operation ID for tracking.
      * @return A CompletableFuture containing the response from the cloud provider.
      */
-    CompletableFuture<InstanceActionResponse> startInstance(Instance instanceContext, CloudInstanceService cloudService);
+    CompletableFuture<InstanceActionResponse> startInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId);
 
     /**
      * Attempts to stop the cloud instance.
@@ -31,9 +33,11 @@ public interface InstanceState {
      *
      * @param instanceContext The instance entity (context) on which the action is performed.
      * @param cloudService    The service used to interact with the cloud provider.
+     * @param userId          The ID of the user performing the operation.
+     * @param operationId     The unique operation ID for tracking.
      * @return A CompletableFuture containing the response from the cloud provider.
      */
-    CompletableFuture<InstanceActionResponse> stopInstance(Instance instanceContext, CloudInstanceService cloudService);
+    CompletableFuture<InstanceActionResponse> stopInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId);
 
     /**
      * Attempts to terminate the cloud instance.
@@ -41,9 +45,11 @@ public interface InstanceState {
      *
      * @param instanceContext The instance entity (context) on which the action is performed.
      * @param cloudService    The service used to interact with the cloud provider.
+     * @param userId          The ID of the user performing the operation.
+     * @param operationId     The unique operation ID for tracking.
      * @return A CompletableFuture containing the response from the cloud provider.
      */
-    CompletableFuture<InstanceActionResponse> terminateInstance(Instance instanceContext, CloudInstanceService cloudService);
+    CompletableFuture<InstanceActionResponse> terminateInstance(Instance instanceContext, CloudInstanceService cloudService, String userId, String operationId);
 
     /**
      * Gets the specific {@link InstanceStateEnum} value that this state represents.

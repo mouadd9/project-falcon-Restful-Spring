@@ -16,7 +16,7 @@ public interface CloudInstanceService {
      * @param machineImageId The identifier of the machine image to use for creating the instance (e.g., AMI ID for AWS).
      * @return A CompletableFuture that will eventually contain the response with details of the created instance.
      */
-    CompletableFuture<CreateInstanceResponse> createInstance(String machineImageId);
+    CompletableFuture<CreateInstanceResponse> createInstance(String machineImageId, String userId, String operationId, String instanceId);
 
     /**
      * Stops a specified cloud instance.
@@ -24,7 +24,7 @@ public interface CloudInstanceService {
      * @param instanceId The identifier of the instance to stop.
      * @return A CompletableFuture that will eventually contain the response indicating the action's outcome.
      */
-    CompletableFuture<InstanceActionResponse> stopInstance(String instanceId);
+    CompletableFuture<InstanceActionResponse> stopInstance(String instanceId, String userId, String operationId, String localInstanceId);
 
     /**
      * Starts a specified cloud instance.
@@ -32,7 +32,7 @@ public interface CloudInstanceService {
      * @param instanceId The identifier of the instance to start.
      * @return A CompletableFuture that will eventually contain the response indicating the action's outcome.
      */
-    CompletableFuture<InstanceActionResponse> startInstance(String instanceId);
+    CompletableFuture<InstanceActionResponse> startInstance(String instanceId, String userId, String operationId, String localInstanceId);
 
     /**
      * Terminates a specified cloud instance.
@@ -40,5 +40,5 @@ public interface CloudInstanceService {
      * @param instanceId The identifier of the instance to terminate.
      * @return A CompletableFuture that will eventually contain the response indicating the action's outcome.
      */
-    CompletableFuture<InstanceActionResponse> terminateInstance(String instanceId);
+    CompletableFuture<InstanceActionResponse> terminateInstance(String instanceId, String userId, String operationId, String localInstanceId);
 }
