@@ -73,18 +73,18 @@ public class InstanceWebSocketService {
         sendInstanceUpdateToOwner(userId, update);
     }
     
-    /**
-     * Broadcast update to all connected users (for system-wide notifications)
-     * Use sparingly - prefer direct user messaging
-     */
-    public void broadcastInstanceUpdate(InstanceOperationUpdate update) {
-        String destination = "/topic/instances/global";
+    // /**
+    //  * Broadcast update to all connected users (for system-wide notifications)
+    //  * Use sparingly - prefer direct user messaging
+    //  */
+    // public void broadcastInstanceUpdate(InstanceOperationUpdate update) {
+    //     String destination = "/topic/instances/global";
         
-        try {
-            messagingTemplate.convertAndSend(destination, update);
-            logger.info("Broadcasted global update: {}", update.getStatus());
-        } catch (Exception e) {
-            logger.error("Failed to broadcast update: {}", e.getMessage());
-        }
-    }
+    //     try {
+    //         messagingTemplate.convertAndSend(destination, update);
+    //         logger.info("Broadcasted global update: {}", update.getStatus());
+    //     } catch (Exception e) {
+    //         logger.error("Failed to broadcast update: {}", e.getMessage());
+    //     }
+    // }
 }

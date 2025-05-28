@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.net.URL;
+import java.net.URI;
 
 @Service
 public class OpenVPNServiceImpl {
@@ -25,7 +25,7 @@ public class OpenVPNServiceImpl {
     private XmlRpcClient getXmlRpcClient() throws Exception {
         XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
         String rpcUrl = openvpnServerUrl.endsWith("/RPC2") ? openvpnServerUrl : openvpnServerUrl + "/RPC2";
-        config.setServerURL(new URL(rpcUrl));
+        config.setServerURL(URI.create(rpcUrl).toURL());
         config.setBasicUserName(adminUsername);
         config.setBasicPassword(adminPassword);
         config.setEnabledForExtensions(true);
@@ -33,8 +33,6 @@ public class OpenVPNServiceImpl {
         client.setConfig(config);
         return client;
     }
-
-    // Removed createUser method.
 
     public byte[] generateUserConfig(String username) throws Exception {
         logger.info("Generating config for user: {}", username);
