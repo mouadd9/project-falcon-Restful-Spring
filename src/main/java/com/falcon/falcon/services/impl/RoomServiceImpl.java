@@ -11,6 +11,7 @@ import com.falcon.falcon.services.RoomService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime; // Added import
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,6 +68,7 @@ public class RoomServiceImpl implements RoomService {
         }
 
         Room room = roomMapper.toEntity(roomDTO);
+        room.setCreatedAt(LocalDateTime.now()); // Set createdAt before saving
         System.out.println("Converted to Room entity: " + room);
         // else we create a new Room object from the DTO passed
         Room savedRoom = roomRepository.save(room);

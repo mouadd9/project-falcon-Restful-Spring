@@ -1,7 +1,9 @@
 package com.falcon.falcon.controllers;
 
 import com.falcon.falcon.dtos.RoomDTO;
+import com.falcon.falcon.dtos.RoomFilterCriteria;
 import com.falcon.falcon.facades.RoomEnrollmentFacade;
+import com.falcon.falcon.services.RoomOperationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,15 +45,24 @@ import java.util.Map;
 @RequestMapping("/api/users") // resource path
 public class RoomEnrollmentController {
     private final RoomEnrollmentFacade roomEnrollmentFacade;
+    private final RoomOperationService roomOperationService;
 
-    public RoomEnrollmentController(RoomEnrollmentFacade roomEnrollmentFacade) {
+    public RoomEnrollmentController(
+            RoomEnrollmentFacade roomEnrollmentFacade,
+            RoomOperationService roomOperationService) {
         this.roomEnrollmentFacade = roomEnrollmentFacade;
+        this.roomOperationService = roomOperationService;
     }
 
     @GetMapping("/{userId}/rooms")
-    public ResponseEntity<List<RoomDTO>> getRoomCatalog(@PathVariable long userId) {
+    public ResponseEntity<List<RoomDTO>> getRoomCatalog(@PathVariable long userId, @ModelAttribute RoomFilterCriteria criteria) {
+        // Get base room catalog
         List<RoomDTO> rooms = roomEnrollmentFacade.getRoomCatalogForUser(userId);
-        return new ResponseEntity<>(rooms, HttpStatus.OK);
+        
+        // Apply filters and sorting using the operation service
+        List<RoomDTO> processedRooms = roomOperationService.applyFiltersAndSorting(rooms, criteria);
+        
+        return new ResponseEntity<>(processedRooms, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/joined-rooms")
@@ -108,9 +119,6 @@ public class RoomEnrollmentController {
         return new ResponseEntity<>(status, HttpStatus.OK);
     }
 
-    // claude help here
-    // Reset completed challenges to 0 (room membership)
-    // find the rows of the correct flag submission related to this user and the challenges of this room and delete them.
     @PostMapping("/{userId}/rooms/{roomId}/reset")
     public ResponseEntity<Void> resetRoomProgress(
             @PathVariable Long userId,

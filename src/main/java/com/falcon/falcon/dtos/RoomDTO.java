@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime; // Added import
 import java.util.List;
 
 @Builder
@@ -23,6 +24,7 @@ public class RoomDTO {
     private String imageURL; // the image of the room
     private int estimatedTime; // the estimated time to complete the room
     private int totalChallenges; // total challenges
+    private LocalDateTime createdAt; // Added field
     // when the user selects a room to see its details this adds up
     private List<ChallengeDTO> challenges; // List of challenges the user can see
     private int totalRunningInstances; // the Number of running instances (these two change over time via sockets)

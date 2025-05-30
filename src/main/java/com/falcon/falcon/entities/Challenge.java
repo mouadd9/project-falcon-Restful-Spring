@@ -23,19 +23,23 @@ public class Challenge {
     private String name;
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String description;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String instructions;
 
     @ManyToOne
     @JoinColumn(name = "room_id")
     private Room room;
 
+    @Builder.Default
     @OneToMany(mappedBy = "challenge", fetch = FetchType.LAZY)
     private Collection<FlagSubmission> flagSubmissions = new ArrayList<>();
-
+    
+    @Builder.Default
     @OneToMany(mappedBy = "challenge", fetch = FetchType.LAZY)
     private Collection<Hint> hints = new ArrayList<>();
 }

@@ -47,9 +47,10 @@ public class JwtConfig {
             this.privateKey = (RSAPrivateKey) converter.getPrivateKey(privateKeyInfo);
             pemParser.close();
             // Load public key
-            pemParser = new PEMParser(publicKeyReader);
-            SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) pemParser.readObject();
-            this.publicKey = (RSAPublicKey) converter.getPublicKey(publicKeyInfo);
+            try (PEMParser publicPemParser = new PEMParser(publicKeyReader)) {
+                SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) publicPemParser.readObject();
+                this.publicKey = (RSAPublicKey) converter.getPublicKey(publicKeyInfo);
+            }
         }
     }
 

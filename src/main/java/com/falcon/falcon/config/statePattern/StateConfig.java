@@ -17,10 +17,10 @@ import java.util.Map;
 @Configuration
 public class StateConfig {
 
-    private NotStartedState notStartedState;
-    private PausedState pausedState;
-    private RunningState runningState;
-    private TerminatedState terminatedState;
+    private final NotStartedState notStartedState;
+    private final PausedState pausedState;
+    private final RunningState runningState;
+    private final TerminatedState terminatedState;
 
     public StateConfig(NotStartedState notStartedState, PausedState pausedState, RunningState runningState, TerminatedState terminatedState) {
         this.notStartedState = notStartedState;
@@ -30,11 +30,7 @@ public class StateConfig {
     }
 
     @Bean
-    public Map<InstanceStateEnum, InstanceState> stateMap(
-            NotStartedState notStartedState,
-            RunningState runningState,
-            PausedState pausedState,
-            TerminatedState terminatedState) {
+    public Map<InstanceStateEnum, InstanceState> stateMap() {
         Map<InstanceStateEnum, InstanceState> map = new HashMap<>();
         map.put(InstanceStateEnum.NOT_STARTED, notStartedState);
         map.put(InstanceStateEnum.RUNNING, runningState);

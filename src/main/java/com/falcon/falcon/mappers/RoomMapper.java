@@ -34,6 +34,7 @@ public class RoomMapper {
                 .totalChallenges(room.getTotalChallenges())
                 .totalJoinedUsers(room.getTotalJoinedUsers())
                 .totalRunningInstances(room.getTotalRunningInstances())
+                .createdAt(room.getCreatedAt()) // Added createdAt mapping
                 .isJoined(false) // this is set to false because we still dont know the user we are retrieveving the room for
                 .isSaved(false) // same thing
                 .percentageCompleted(0) // same thing
