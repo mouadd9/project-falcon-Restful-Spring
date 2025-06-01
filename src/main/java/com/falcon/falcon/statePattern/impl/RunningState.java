@@ -1,6 +1,6 @@
 package com.falcon.falcon.statePattern.impl;
 
-import com.falcon.falcon.dtos.cloudDto.InstanceActionResponse;
+import com.falcon.falcon.dtos.cloud.InstanceActionResponse;
 import com.falcon.falcon.entities.Instance;
 import com.falcon.falcon.enums.InstanceStateEnum;
 import com.falcon.falcon.exceptions.instanceExceptions.InvalidInstanceStateException;

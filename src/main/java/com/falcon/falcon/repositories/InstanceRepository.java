@@ -1,6 +1,8 @@
 package com.falcon.falcon.repositories;
 
 import com.falcon.falcon.entities.Instance;
+import com.falcon.falcon.enums.InstanceStateEnum;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,4 +22,7 @@ public interface InstanceRepository extends JpaRepository<Instance, Long> {
      */
     @Query("SELECT i FROM Instance i WHERE i.room.id = :roomId AND i.user.id = :userId ORDER BY i.launchDate DESC")
     Optional<Instance> findLatestByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
+
+    long countByUser_IdAndInstanceState(Long userId, InstanceStateEnum instanceState);
+
 }

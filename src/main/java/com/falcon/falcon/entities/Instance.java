@@ -26,8 +26,7 @@ public class Instance {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private InstanceStateEnum instanceState;
-    // private String AMIid;
-
+    
     // Many instances are launched from one Room
     @ManyToOne // this field manages the relationship between room and instance
     @JoinColumn(name = "room_id")

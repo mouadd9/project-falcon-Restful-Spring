@@ -1,10 +1,10 @@
 package com.falcon.falcon.services;
 
-import com.falcon.falcon.dtos.cloudDto.CreateInstanceResponse;
-import com.falcon.falcon.dtos.cloudDto.InstanceActionResponse;
 import com.falcon.falcon.entities.Instance;
 import com.falcon.falcon.enums.InstanceStateEnum;
 import com.falcon.falcon.dtos.InstanceStateDTO;
+import com.falcon.falcon.dtos.cloud.CreateInstanceResponse;
+import com.falcon.falcon.dtos.cloud.InstanceActionResponse;
 
 import java.util.concurrent.CompletableFuture;
 

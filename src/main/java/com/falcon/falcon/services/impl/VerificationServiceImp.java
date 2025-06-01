@@ -1,7 +1,7 @@
 package com.falcon.falcon.services.impl;
 
-import com.falcon.falcon.dtos.authDto.SignUpRequest;
-import com.falcon.falcon.dtos.authDto.VerificationEntry;
+import com.falcon.falcon.dtos.auth.SignUpRequest;
+import com.falcon.falcon.dtos.auth.VerificationEntry;
 import com.falcon.falcon.exceptions.authExceptions.CodeExpiredException;
 import com.falcon.falcon.exceptions.authExceptions.EmaiNotVerifiedOrRequestIdNotValid;
 import com.falcon.falcon.exceptions.authExceptions.VerificationCodeInvalid;

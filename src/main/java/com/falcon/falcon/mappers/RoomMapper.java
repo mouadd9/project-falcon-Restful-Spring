@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class RoomMapper {
 
-    public RoomDTO toUserSpecificDTO(Room room, RoomMembership roomMembership) {
+    @SuppressWarnings("null")
+	public RoomDTO toUserSpecificDTO(Room room, RoomMembership roomMembership) {
         RoomDTO dto = toDTO(room);
         // Add null check and divide-by-zero protection
         if (roomMembership != null && room.getTotalChallenges() > 0) {

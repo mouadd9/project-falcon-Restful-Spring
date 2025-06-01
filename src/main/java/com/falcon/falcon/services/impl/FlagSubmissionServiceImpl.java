@@ -68,7 +68,7 @@ public class FlagSubmissionServiceImpl implements FlagSubmissionService {
             if (isCorrect) {
                 // Update from incorrect to correct
                 submission.setIsCorrect(true);
-                submission.setSumbissionDate(new Date());
+                submission.setSubmissionDate(new Date());
 
                 // Update challenge completion count in room membership
                 updateChallengeCompletionCount(userId, challenge.getRoom().getId());
@@ -82,7 +82,7 @@ public class FlagSubmissionServiceImpl implements FlagSubmissionService {
             newSubmission.setChallenge(challenge);
             newSubmission.setSubmittedFlag(submittedFlag);
             newSubmission.setIsCorrect(isCorrect);
-            newSubmission.setSumbissionDate(new Date());
+            newSubmission.setSubmissionDate(new Date());
 
             flagSubmissionRepository.save(newSubmission);
 

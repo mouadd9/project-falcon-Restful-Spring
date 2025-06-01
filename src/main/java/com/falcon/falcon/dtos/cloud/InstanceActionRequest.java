@@ -1,4 +1,4 @@
-package com.falcon.falcon.dtos.cloudDto;
+package com.falcon.falcon.dtos.cloud;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

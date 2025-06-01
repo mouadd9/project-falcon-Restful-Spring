@@ -1,10 +1,9 @@
 package com.falcon.falcon.controllers;
 
-import com.falcon.falcon.dtos.authDto.LoginRequest;
-import com.falcon.falcon.dtos.authDto.SignUpRequest;
-import com.falcon.falcon.dtos.authDto.VerificationCodeRequest;
-import com.falcon.falcon.dtos.authDto.VerificationCodeResponse;
-
+import com.falcon.falcon.dtos.auth.LoginRequest;
+import com.falcon.falcon.dtos.auth.SignUpRequest;
+import com.falcon.falcon.dtos.auth.VerificationCodeRequest;
+import com.falcon.falcon.dtos.auth.VerificationCodeResponse;
 import com.falcon.falcon.facades.AuthenticationFacade;
 
 import org.springframework.http.HttpStatus;

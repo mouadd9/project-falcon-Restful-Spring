@@ -1,8 +1,4 @@
-
-package com.falcon.falcon.dtos.cloudDto;
-
-import com.falcon.falcon.enums.InstanceStateEnum;
-
+package com.falcon.falcon.dtos.cloud;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,9 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateInstanceResponse {
-    private Long internalInstanceId;
-    private InstanceStateEnum instanceState;
+public class InstanceActionResponse {
     private String instanceId;
     private String privateIpAddress;
 }

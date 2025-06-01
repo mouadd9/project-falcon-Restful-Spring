@@ -18,7 +18,7 @@ public class FlagSubmission {
 
     private String submittedFlag;
     private Boolean isCorrect;
-    private Date sumbissionDate;
+    private Date submissionDate;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

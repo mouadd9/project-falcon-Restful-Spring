@@ -1,9 +1,9 @@
 package com.falcon.falcon.services;
 
-import com.falcon.falcon.dtos.cloudDto.CreateInstanceResponse;
-import com.falcon.falcon.dtos.cloudDto.InstanceActionResponse;
-
 import java.util.concurrent.CompletableFuture;
+
+import com.falcon.falcon.dtos.cloud.CreateInstanceResponse;
+import com.falcon.falcon.dtos.cloud.InstanceActionResponse;
 
 /**
  * Interface for managing cloud instances, providing an abstraction over specific cloud providers.

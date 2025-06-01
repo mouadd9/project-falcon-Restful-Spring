@@ -1,8 +1,8 @@
 package com.falcon.falcon.services.impl;
 
 import com.falcon.falcon.dtos.InstanceStateDTO;
-import com.falcon.falcon.dtos.cloudDto.CreateInstanceResponse;
-import com.falcon.falcon.dtos.cloudDto.InstanceActionResponse;
+import com.falcon.falcon.dtos.cloud.CreateInstanceResponse;
+import com.falcon.falcon.dtos.cloud.InstanceActionResponse;
 import com.falcon.falcon.entities.Instance;
 import com.falcon.falcon.entities.Room;
 import com.falcon.falcon.entities.User;

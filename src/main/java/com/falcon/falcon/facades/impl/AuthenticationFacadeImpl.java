@@ -1,7 +1,7 @@
 package com.falcon.falcon.facades.impl;
 
 import com.falcon.falcon.dtos.UserDTO;
-import com.falcon.falcon.dtos.authDto.*;
+import com.falcon.falcon.dtos.auth.*;
 import com.falcon.falcon.facades.AuthenticationFacade;
 import com.falcon.falcon.services.EmailService;
 import com.falcon.falcon.services.TokenService;

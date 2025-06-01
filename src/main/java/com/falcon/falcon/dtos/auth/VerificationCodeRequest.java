@@ -1,4 +1,4 @@
-package com.falcon.falcon.dtos.authDto;
+package com.falcon.falcon.dtos.auth;
 
 import lombok.Data;
 

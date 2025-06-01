@@ -1,7 +1,7 @@
 package com.falcon.falcon.services.impl;
 
-import com.falcon.falcon.dtos.cloudDto.CreateInstanceResponse;
-import com.falcon.falcon.dtos.cloudDto.InstanceActionResponse;
+import com.falcon.falcon.dtos.cloud.CreateInstanceResponse;
+import com.falcon.falcon.dtos.cloud.InstanceActionResponse;
 import com.falcon.falcon.dtos.websocket.InstanceOperationUpdate;
 import com.falcon.falcon.services.CloudInstanceService;
 import software.amazon.awssdk.regions.Region;

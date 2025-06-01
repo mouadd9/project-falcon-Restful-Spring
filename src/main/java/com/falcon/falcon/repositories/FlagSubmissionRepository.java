@@ -56,4 +56,22 @@ public interface FlagSubmissionRepository extends JpaRepository<FlagSubmission, 
     @Modifying
     @Query("DELETE FROM FlagSubmission fs WHERE fs.user.id = :userId AND fs.challenge.id IN :challengeIds")
     void deleteByUserIdAndChallengeIdIn(@Param("userId") Long userId, @Param("challengeIds") Set<Long> challengeIds);
+
+
+
+    /**
+     * Checks if a user has at least one correct flag submission on a specific calendar date.
+     * Note: The exact SQL function for date extraction (e.g., DATE(), TRUNC()) might vary
+     * depending on your database (H2, MySQL, PostgreSQL, Oracle, etc.).
+     * This example uses a common approach. Adjust if necessary for your specific DB.
+     */
+    @Query("SELECT CASE WHEN COUNT(fs) > 0 THEN TRUE ELSE FALSE END " +
+           "FROM FlagSubmission fs " +
+           "WHERE fs.user.id = :userId " +
+           "AND fs.isCorrect = true " +
+           "AND FUNCTION('DATE', fs.submissionDate) = :targetDate") // Assumes submissionDate field
+    boolean hasCorrectSubmissionOnDate(@Param("userId") Long userId, @Param("targetDate") java.sql.Date targetDate);
+
+    // Alternative if your submissionDate is a Timestamp and you want to check a date range for a given LocalDate:
+    // boolean existsByUser_IdAndIsCorrectTrueAndSubmissionDateBetween(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay);
 }
