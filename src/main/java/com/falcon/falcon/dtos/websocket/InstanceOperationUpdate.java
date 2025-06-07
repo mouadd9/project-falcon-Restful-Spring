@@ -20,7 +20,6 @@ public class InstanceOperationUpdate {
     private String operationType;
     
     // New fields for enhanced progress tracking
-    private String phase;           // Human-readable phase description
     private String ipAddress;       // Instance IP address
 
     // Enum for operation status
@@ -75,7 +74,6 @@ public class InstanceOperationUpdate {
         update.status = OperationStatus.INITIALIZING;
         update.message = "Initializing the request for ressources... ";
         update.progress = 10;
-        update.phase = "Database Setup";
         update.operationType = "CREATE"; // Set operationType
         return update;
     }
@@ -87,7 +85,6 @@ public class InstanceOperationUpdate {
         update.status = OperationStatus.REQUESTING;
         update.message = "Requesting ressources...";
         update.progress = 25;
-        update.phase = "Cloud Request";
         update.operationType = "CREATE"; // Set operationType
         return update;
     }
@@ -99,7 +96,6 @@ public class InstanceOperationUpdate {
         update.status = OperationStatus.PROVISIONING;
         update.message = "Allocating resources...";
         update.progress = 60;
-        update.phase = "Resource Allocation";
         update.operationType = "CREATE"; // Set operationType
         return update;
     }
@@ -112,7 +108,6 @@ public class InstanceOperationUpdate {
         update.status = OperationStatus.RUNNING; // Changed from COMPLETED to RUNNING for clarity
         update.message = "Instance ready and running";
         update.progress = 100;
-        update.phase = "Ready";
         update.operationType = "CREATE"; // Set operationType
         return update;
     }
@@ -193,7 +188,7 @@ public class InstanceOperationUpdate {
         update.progress = 25;
         update.operationType = "TERMINATE"; 
         return update;
-    }
+    } 
 
     public static InstanceOperationUpdate terminated(String operationId, String instanceId) {
         InstanceOperationUpdate update = new InstanceOperationUpdate();

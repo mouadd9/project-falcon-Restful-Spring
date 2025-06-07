@@ -15,7 +15,7 @@ public class InstanceOperationStarted {
     private String operationId; // Unique ID for the operation
     private String status; // Status of the operation (e.g., "ACCEPTED")
     private String message;
-    private String estimatedDuration;
+    private String estimatedDuration; 
     private String instanceId;
     private String operationType;
     private LocalDateTime timestamp;

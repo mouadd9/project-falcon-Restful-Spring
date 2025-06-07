@@ -50,11 +50,8 @@ public class InstanceAsyncController {
      */
     @PostMapping("/{instanceId}/start/async")
     public ResponseEntity<InstanceOperationStarted> startInstanceAsync(@PathVariable Long instanceId) {
-        
         logger.debug("HTTP Request: Start instance async for instance {}", instanceId);
-        
         InstanceOperationStarted response = asyncInstanceOperationService.startInstanceAsync(instanceId);
-        
         return ResponseEntity.ok(response);
     }
 
@@ -64,11 +61,8 @@ public class InstanceAsyncController {
      */
     @PostMapping("/{instanceId}/stop/async")
     public ResponseEntity<InstanceOperationStarted> stopInstanceAsync(@PathVariable Long instanceId) {
-        
         logger.debug("HTTP Request: Stop instance async for instance {}", instanceId);
-        
         InstanceOperationStarted response = asyncInstanceOperationService.stopInstanceAsync(instanceId);
-        
         return ResponseEntity.ok(response);
     }
 
@@ -78,11 +72,8 @@ public class InstanceAsyncController {
      */
     @DeleteMapping("/{instanceId}/async")
     public ResponseEntity<InstanceOperationStarted> terminateInstanceAsync(@PathVariable Long instanceId) {
-        
         logger.debug("HTTP Request: Terminate instance async for instance {}", instanceId);
-        
         InstanceOperationStarted response = asyncInstanceOperationService.terminateInstanceAsync(instanceId);
-        
         return ResponseEntity.ok(response);
     }
 }

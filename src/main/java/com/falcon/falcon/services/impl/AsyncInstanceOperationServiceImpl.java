@@ -24,7 +24,7 @@ public class AsyncInstanceOperationServiceImpl implements AsyncInstanceOperation
     private static final Logger logger = LoggerFactory.getLogger(AsyncInstanceOperationServiceImpl.class);
     
     @Autowired
-    private InstanceService instanceService; // Should be InstanceService if you prefer coding to interfaces
+    private InstanceService instanceService;
     
     @Autowired
     private InstanceWebSocketService webSocketService;
