@@ -18,6 +18,7 @@ public interface RoomEnrollmentFacade {
      */
     List<RoomDTO> getRoomCatalogForUser(Long userId);
 
+
     /**
      * Retrieves a list of rooms that a user has joined.
      *

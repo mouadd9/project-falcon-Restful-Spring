@@ -1,9 +1,9 @@
-package com.falcon.falcon.controllers;
+package org.falcon.progressionservice.controller;
 
-import com.falcon.falcon.dtos.RoomDTO;
-import com.falcon.falcon.dtos.RoomFilterCriteria;
-import com.falcon.falcon.facades.RoomEnrollmentFacade;
-import com.falcon.falcon.services.RoomOperationService;
+import org.falcon.progressionservice.dto.RoomDTO;
+// import com.falcon.falcon.facades.RoomEnrollmentFacade;
+
+import org.falcon.progressionservice.service.RoomEnrollmentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,90 +11,78 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
-@RequestMapping("/api/users") // resource path
+@RequestMapping("/api/progression/users") // resource path
 public class RoomEnrollmentController {
-    private final RoomEnrollmentFacade roomEnrollmentFacade;
-    private final RoomOperationService roomOperationService;
+    private final RoomEnrollmentService roomEnrollmentService;
 
-    public RoomEnrollmentController(
-            RoomEnrollmentFacade roomEnrollmentFacade,
-            RoomOperationService roomOperationService) {
-        this.roomEnrollmentFacade = roomEnrollmentFacade;
-        this.roomOperationService = roomOperationService;
+    public RoomEnrollmentController(RoomEnrollmentService roomEnrollmentService) {
+        this.roomEnrollmentService = roomEnrollmentService;
     }
 
     @GetMapping("/{userId}/rooms")
-    public ResponseEntity<List<RoomDTO>> getRoomCatalog(@PathVariable long userId, @ModelAttribute RoomFilterCriteria criteria) {
-        // Get base room catalog
-        List<RoomDTO> rooms = roomEnrollmentFacade.getRoomCatalogForUser(userId);
-        
-        // Apply filters and sorting using the operation service
-        List<RoomDTO> processedRooms = roomOperationService.applyFiltersAndSorting(rooms, criteria);
-        
-        return new ResponseEntity<>(processedRooms, HttpStatus.OK);
+    public ResponseEntity<List<RoomDTO>> getRoomCatalog(@PathVariable long userId) {
+        List<RoomDTO> rooms = roomEnrollmentService.getRoomCatalogForUser(userId);
+        return new ResponseEntity<>(rooms, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/joined-rooms")
     public ResponseEntity<List<RoomDTO>> getJoinedRooms(@PathVariable long userId) {
-        List<RoomDTO> rooms = roomEnrollmentFacade.getJoinedRooms(userId);
+        List<RoomDTO> rooms = roomEnrollmentService.getJoinedRooms(userId);
         return new ResponseEntity<>(rooms, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/saved-rooms")
     public ResponseEntity<List<RoomDTO>> getSavedRooms(@PathVariable long userId) {
-        List<RoomDTO> rooms = roomEnrollmentFacade.getSavedRooms(userId);
+        List<RoomDTO> rooms = roomEnrollmentService.getSavedRooms(userId);
         return new ResponseEntity<>(rooms, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/completed-rooms")
     public ResponseEntity<List<RoomDTO>> getCompletedRooms(@PathVariable long userId) {
-        List<RoomDTO> rooms = roomEnrollmentFacade.getCompletedRooms(userId);
+        List<RoomDTO> rooms = roomEnrollmentService.getCompletedRooms(userId);
         return new ResponseEntity<>(rooms, HttpStatus.OK);
     }
 
     @GetMapping("/{userId}/joined-rooms/{roomId}")
     public ResponseEntity<RoomDTO> getJoinedRoom(@PathVariable long userId, @PathVariable long roomId) {
-        RoomDTO room = roomEnrollmentFacade.getJoinedRoom(userId, roomId);
+        RoomDTO room = roomEnrollmentService.getJoinedRoom(userId, roomId);
         return new ResponseEntity<>(room, HttpStatus.OK);
     }
 
     @PostMapping("/{userId}/rooms/{roomId}/join")
     public ResponseEntity<Void> joinRoom(@PathVariable long userId, @PathVariable long roomId) {
-        roomEnrollmentFacade.joinRoom(userId, roomId);
+        roomEnrollmentService.joinRoom(userId, roomId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{userId}/rooms/{roomId}/save")
     public ResponseEntity<Void> saveRoom(@PathVariable long userId, @PathVariable long roomId) {
-        roomEnrollmentFacade.saveRoom(userId, roomId);
+        roomEnrollmentService.saveRoom(userId, roomId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{userId}/rooms/{roomId}/leave")
     public ResponseEntity<Void> leaveRoom(@PathVariable long userId, @PathVariable long roomId) {
-        roomEnrollmentFacade.leaveRoom(userId, roomId);
+        roomEnrollmentService.leaveRoom(userId, roomId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{userId}/rooms/{roomId}/unsave")
     public ResponseEntity<Void> unSaveRoom(@PathVariable long userId, @PathVariable long roomId) {
-        roomEnrollmentFacade.unsaveRoom(userId, roomId);
+        roomEnrollmentService.unSaveRoom(userId, roomId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{userId}/rooms/{roomId}/status")
     public ResponseEntity<Map<String, Boolean>> checkRoomStatus(@PathVariable long userId, @PathVariable long roomId) {
-        Map<String, Boolean> status = roomEnrollmentFacade.getRoomMembershipStatus(userId, roomId);
+        Map<String, Boolean> status = roomEnrollmentService.getRoomMembershipStatus(userId, roomId);
         return new ResponseEntity<>(status, HttpStatus.OK);
     }
 
     @PostMapping("/{userId}/rooms/{roomId}/reset")
-    public ResponseEntity<Void> resetRoomProgress(
-            @PathVariable Long userId,
-            @PathVariable Long roomId) {
-        roomEnrollmentFacade.resetRoomProgress(userId, roomId);
+    public ResponseEntity<Void> resetRoomProgress(@PathVariable Long userId, @PathVariable Long roomId) {
+        roomEnrollmentService.resetRoomProgress(userId, roomId);
         return ResponseEntity.ok().build();
     }
 }

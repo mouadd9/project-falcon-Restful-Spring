@@ -1,0 +1,31 @@
+package org.falcon.progressionservice.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.Date;
+
+
+@Entity
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "room_id"})
+})
+public class RoomMembership {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Boolean isJoined;
+    private Boolean isSaved;
+    private Date completedAt;
+    private int challengesCompleted;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "room_id")
+    private Long roomId;
+}
