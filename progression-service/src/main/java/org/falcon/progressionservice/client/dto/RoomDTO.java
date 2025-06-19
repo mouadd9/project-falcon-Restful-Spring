@@ -1,4 +1,4 @@
-package org.falcon.progressionservice.dto;
+package org.falcon.progressionservice.client.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

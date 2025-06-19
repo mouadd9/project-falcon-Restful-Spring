@@ -1,6 +1,6 @@
 package org.falcon.progressionservice.service;
 
-import org.falcon.progressionservice.dto.RoomDTO;
+import org.falcon.progressionservice.client.dto.RoomDTO;
 
 import java.util.List;
 import java.util.Map;

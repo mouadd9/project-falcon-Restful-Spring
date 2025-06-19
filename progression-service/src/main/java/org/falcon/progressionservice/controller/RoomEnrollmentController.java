@@ -1,6 +1,6 @@
 package org.falcon.progressionservice.controller;
 
-import org.falcon.progressionservice.dto.RoomDTO;
+import org.falcon.progressionservice.client.dto.RoomDTO;
 // import com.falcon.falcon.facades.RoomEnrollmentFacade;
 
 import org.falcon.progressionservice.service.RoomEnrollmentService;
