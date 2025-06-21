@@ -115,12 +115,6 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
         });
     }
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     @Override
     public void leaveRoom(Long userId, Long roomId) {
         Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByUserIdAndRoomId(userId, roomId);
@@ -129,6 +123,8 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
             // this.roomService.decrementJoinedUsers(roomId); // this function will decrement the number of Joined Users and then broadcast the info via sockets to subscribers.
             // STEP 2: [FUTURE] Insert your FlagSubmission clearing logic HERE
             // This is where you'll add the call to clear flag submissions
+            // this function will fetch the room from our room service, the room will have its challenges
+            // and then we will use the challenge ids to know the entries to delete in the flag submission table
             this.flagSubmissionService.deleteSubmissionsForUserAndRoom(userId, roomId);
             // STEP 3 : cases
             if (membership.getIsSaved()) { // if the room is Saved

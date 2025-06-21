@@ -1,7 +1,6 @@
 package org.falcon.progressionservice.controller;
 
 import org.falcon.progressionservice.client.dto.RoomDTO;
-// import com.falcon.falcon.facades.RoomEnrollmentFacade;
 
 import org.falcon.progressionservice.service.RoomEnrollmentService;
 import org.springframework.http.HttpStatus;

@@ -22,12 +22,5 @@ public interface FlagSubmissionRepository extends JpaRepository<FlagSubmission, 
     @Query("DELETE FROM FlagSubmission fs WHERE fs.userId = :userId AND fs.challengeId IN :challengeIds")
     void deleteByUserIdAndChallengeIdIn(@Param("userId") Long userId, @Param("challengeIds") Set<Long> challengeIds);
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    @Query("SELECT fs.challenge.id FROM FlagSubmission fs WHERE fs.user.id = :userId AND fs.challenge.room.id = :roomId")
-    Set<Long> findChallengeIdsByUserIdAndRoomId(@Param("userId") Long userId, @Param("roomId") Long roomId);
 
 }

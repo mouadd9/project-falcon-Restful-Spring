@@ -49,7 +49,7 @@ public class RoomServiceImp implements RoomService {
     @Override
     @Transactional(readOnly = true)
     public RoomDTO getRoomById(Long id) {
-        Room room = roomRepository.findById(id)
+        Room room = roomRepository.findRoomWithChallengesById(id)
                 .orElseThrow(()->new RoomNotFoundException("room not found"));
         RoomDTO roomDTO = roomMapper.toDTO(room);
         roomDTO.setChallenges(
