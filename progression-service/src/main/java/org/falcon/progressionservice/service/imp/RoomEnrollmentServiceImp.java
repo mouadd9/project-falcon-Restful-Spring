@@ -4,6 +4,7 @@ import org.falcon.progressionservice.client.ContentServiceClient;
 import org.falcon.progressionservice.client.dto.ChallengeDTO;
 import org.falcon.progressionservice.client.dto.RoomDTO;
 import org.falcon.progressionservice.entity.RoomMembership;
+import org.falcon.progressionservice.exception.RoomMembershipNotFoundException;
 import org.falcon.progressionservice.mapper.RoomMapper;
 import org.falcon.progressionservice.repository.FlagSubmissionRepository;
 import org.falcon.progressionservice.repository.RoomMembershipRepository;
@@ -11,10 +12,7 @@ import org.falcon.progressionservice.service.FlagSubmissionService;
 import org.falcon.progressionservice.service.RoomEnrollmentService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,36 +43,26 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
         Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByUserIdAndRoomId(userId, roomId);
         // step 2 : check
         roomMembership.ifPresentOrElse(
-                // if the room membership is present
                 membership -> {
                    // this.roomService.incrementJoinedUsers(roomId);
                     membership.setIsJoined(true); // we set isJoined to true
                     this.roomMembershipRepository.save(membership); // we persist it
-                },
-                // if the room membership is not present this means the room was never saved before, and an entry in the roomMembership table is not there
-                () -> {
+                },() -> {
                     // User user = this.userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("user not found")); // we first retrieve the user
                     // Room room = this.roomRepository.findById(roomId).orElseThrow(() -> new RoomNotFoundException("room not found")); // then the room
-                    RoomMembership newRoomMembership = new RoomMembership(); // then we create a new Room Membership
-                    // we then set the relationship
+                    RoomMembership newRoomMembership = new RoomMembership();
                     newRoomMembership.setRoomId(roomId);
                     newRoomMembership.setUserId(userId);
-                    // then we mark the user as joined
                     newRoomMembership.setIsSaved(false);
                     newRoomMembership.setIsJoined(true);
-                    this.roomMembershipRepository.save(newRoomMembership); // then we save the room membership
-                    // in the future we should from here signal out to the roomService that a new user has joined a room
-                  //  this.roomService.incrementJoinedUsers(roomId);
+                    this.roomMembershipRepository.save(newRoomMembership);
+                    // this.roomService.incrementJoinedUsers(roomId);
                 }
         );
     }
 
     @Override
     public void saveRoom(Long userId, Long roomId) {
-        // again here we have two cases
-        // if the user has joined the room then we will just modify the existing relationship
-        // else we will create a new roomMembership
-
         // step 1
         Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByUserIdAndRoomId(userId, roomId);
         // step 2
@@ -82,20 +70,15 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
                 membership -> {
                     membership.setIsSaved(true);
                     this.roomMembershipRepository.save(membership);
-                },
-                // if the room membership is not present this means that there is no entry in the roomMembership table
-                () -> {
+                }, () -> {
                     // User user = this.userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("user not found")); // we first retrieve the user
                     // Room room = this.roomRepository.findById(roomId).orElseThrow(() -> new RoomNotFoundException("room not found")); // then the room
-                    RoomMembership newRoomMembership = new RoomMembership(); // then we create a new Room Membership
-                    // we then set the relationship
+                    RoomMembership newRoomMembership = new RoomMembership();
                     newRoomMembership.setRoomId(roomId);
                     newRoomMembership.setUserId(userId);
-                    // then we mark the user as joined
                     newRoomMembership.setIsJoined(false);
                     newRoomMembership.setIsSaved(true);
-                    this.roomMembershipRepository.save(newRoomMembership); // then we save the room membership
-                    // in the future we should from here signal out to the roomService that a new user has joined a room
+                    this.roomMembershipRepository.save(newRoomMembership);
                 }
         );
     }
@@ -118,15 +101,10 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
     @Override
     public void leaveRoom(Long userId, Long roomId) {
         Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByUserIdAndRoomId(userId, roomId);
-        roomMembership.ifPresentOrElse(membership -> { // most likely the room membership will exist (with isJoined set to true) , because teh room shown in the UI is Joined by that user
-            // STEP 1 :
-            // this.roomService.decrementJoinedUsers(roomId); // this function will decrement the number of Joined Users and then broadcast the info via sockets to subscribers.
-            // STEP 2: [FUTURE] Insert your FlagSubmission clearing logic HERE
-            // This is where you'll add the call to clear flag submissions
-            // this function will fetch the room from our room service, the room will have its challenges
-            // and then we will use the challenge ids to know the entries to delete in the flag submission table
+        roomMembership.ifPresentOrElse(membership -> {
+            // this.roomService.decrementJoinedUsers(roomId);
             this.flagSubmissionService.deleteSubmissionsForUserAndRoom(userId, roomId);
-            // STEP 3 : cases
+            // Cases
             if (membership.getIsSaved()) { // if the room is Saved
                 membership.setIsJoined(false); // we set is Joined to False
                 membership.setChallengesCompleted(0);
@@ -146,14 +124,10 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
 
     @Override
     public List<RoomDTO> getRoomCatalogForUser(Long userId) {
-        // step 1 : Get all base room information using the content service
         List<RoomDTO> allRooms = contentServiceClient.getAllRooms();
-
-        // step 2 : Get rooms user has joined or saved  using userManager/userService this service provides us with information regarding users NOT ROOMS (like for example rooms a user has joined !!!)
-        List<RoomDTO> joinedRooms = getJoinedRooms(userId); // this method, retrieves a user and its memberships, for each membership it gets the room associated with that membership. it returns a list of roomDTOs
+        List<RoomDTO> joinedRooms = getJoinedRooms(userId);
         List<RoomDTO> savedRooms = getSavedRooms(userId);
-
-        // Step 3: Enrich each room with user-specific data
+        // Enrich each room with user-specific data
         return allRooms.stream()
                 .map(room -> enrichRoomWithUserData(room, joinedRooms, savedRooms))
                 .collect(Collectors.toList());
@@ -164,9 +138,9 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
         joinedRooms.stream()
                 .filter(joinedRoom -> joinedRoom.getId().equals(room.getId()))
                 .findFirst() // terminal operation
-                .ifPresent(joinedRoom -> { // if the
+                .ifPresent(joinedRoom -> {
                     room.setIsJoined(joinedRoom.getIsJoined());
-                    room.setIsSaved(joinedRoom.getIsSaved()); // this will set is saved to false if the user did not save the room
+                    room.setIsSaved(joinedRoom.getIsSaved());
                     room.setPercentageCompleted(joinedRoom.getPercentageCompleted());
                 });
 
@@ -181,9 +155,8 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
 
     @Override
     public List<RoomDTO> getJoinedRooms(Long userId) {
-        // Memberships for joined rooms
+        // Memberships for joined rooms -> extraction of the Ids of joined rooms
         List<RoomMembership> memberships = roomMembershipRepository.findByUserIdAndIsJoinedTrue(userId);
-        // Ids of joined rooms
         List<Long> roomIds = memberships.stream().map(membership -> membership.getRoomId()).toList();
         // joined rooms via open feign client
         List<RoomDTO> joinedRooms = contentServiceClient.getRoomsByIds(roomIds); // this will return RoomDTOs
@@ -213,16 +186,16 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
         List<RoomMembership> allMemberships = roomMembershipRepository.findByUserId(userId); // we retrieve all memberships
         List<Long> roomIds = allMemberships.stream().map(membership -> membership.getRoomId()).toList();
         List<RoomDTO> rooms = contentServiceClient.getRoomsByIds(roomIds);
-        Map<Long, RoomDTO> allRoomsMap = rooms.stream().collect(Collectors.toMap(room -> room.getId(), room -> room));
+        Map<Long, RoomDTO> completedRoomsMap = rooms.stream().collect(Collectors.toMap(room -> room.getId(), room -> room));
         return allMemberships.stream()
                 .filter(membership -> {
-                    RoomDTO room = allRoomsMap.get(membership.getRoomId()); // we extract the room related to the membership
+                    RoomDTO room = completedRoomsMap.get(membership.getRoomId()); // we extract the room related to the membership
                     if (room == null || room.getTotalChallenges() == 0) {return false;}
                     return membership.getChallengesCompleted() == room.getTotalChallenges();
                 })
                 .map(membership -> {
                     // After filtering, map the remaining (completed) rooms to the final DTO
-                    RoomDTO room = allRoomsMap.get(membership.getRoomId());
+                    RoomDTO room = completedRoomsMap.get(membership.getRoomId());
                     return roomMapper.toUserSpecificDTO(room, membership);
                 })
                 .collect(Collectors.toList());
@@ -234,14 +207,10 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
         RoomMembership roomMembership = roomMembershipRepository.findByUserIdAndRoomId(userId, roomId)
                 .orElseThrow(() -> new RoomMembershipNotFoundException("User has not joined this room"));
         // 2. Get the full room details, including the list of all its challenges, from the content-service.
-        RoomDTO roomDTO = contentServiceClient.getRoomById(roomId);
-        // if (roomDTO == null || roomDTO.getChallenges() == null) {
-            // Handle case where room or its challenges are not found
-        //    throw new RoomNotFoundException("Room details or challenges not found for room ID: " + roomId);
-        //}
+        RoomDTO roomDTO = contentServiceClient.getRoomById(roomId); // this can propagate an exception that will be caught by our decoder
         List<ChallengeDTO> challengesInThisRoom = roomDTO.getChallenges();
 
-        // 3. Get the set of ALL challenge IDs this user has ever solved correctly from our local database.
+        // 3. Ids of completed challenges for this user.
         Set<Long> allSolvedChallengeIdsForUser = flagSubmissionRepository.findCorrectChallengeIdsByUserId(userId);
 
         // 4. Mark the challenges in this specific room as completed if their ID is in the user's "solved" set.
@@ -261,6 +230,15 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
 
     @Override
     public Map<String, Boolean> getRoomMembershipStatus(long userId, long roomId) {
-        return Map.of();
+        Map<String, Boolean> status = new HashMap<>();
+        Optional<RoomMembership> membership = roomMembershipRepository.findByUserIdAndRoomId(userId, roomId);
+        if (membership.isPresent()) {
+            status.put("isJoined", membership.get().getIsJoined());
+            status.put("isSaved", membership.get().getIsSaved());
+        } else {
+            status.put("isJoined", false);
+            status.put("isSaved", false);
+        }
+        return status;
     }
 }

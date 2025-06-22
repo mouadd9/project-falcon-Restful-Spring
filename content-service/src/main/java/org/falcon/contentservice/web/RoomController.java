@@ -1,4 +1,4 @@
-package org.falcon.contentservice.controller;
+package org.falcon.contentservice.web;
 
 import org.falcon.contentservice.dto.RoomDTO;
 import org.springframework.http.ResponseEntity;

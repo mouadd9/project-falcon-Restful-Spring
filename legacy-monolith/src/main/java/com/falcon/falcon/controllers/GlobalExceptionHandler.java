@@ -110,7 +110,7 @@ public class GlobalExceptionHandler {
 
     // Room Controller exception handlers
     @ExceptionHandler(RoomNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleRoomNotFoundException(AuthenticationException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleRoomNotFoundException(RoomNotFoundException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(), // 401
                 "ROOM_NOT_FOUND",
@@ -123,7 +123,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RoomAlreadySavedException.class)
-    public ResponseEntity<ErrorResponse> handleRoomAlreadySavedException(AuthenticationException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleRoomAlreadySavedException(RoomAlreadySavedException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.CONFLICT.value(), // 401
                 "ROOM_ALREADY_SAVED",
@@ -136,7 +136,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFoundException(AuthenticationException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(), // 401
                 "USER_NOT_FOUND",

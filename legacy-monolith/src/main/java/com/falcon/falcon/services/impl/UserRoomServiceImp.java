@@ -266,11 +266,8 @@ public class UserRoomServiceImp implements UserRoomService {
 
     @Override
     public Map<String, Boolean> getRoomMembershipStatus(long userId, long roomId) {
-
         Map<String, Boolean> status = new HashMap<>();
-
         Optional<RoomMembership> membership = roomMembershipRepository.findByRoomIdAndUserId(roomId, userId);
-
         if (membership.isPresent()) {
             status.put("isJoined", membership.get().getIsJoined());
             status.put("isSaved", membership.get().getIsSaved());
@@ -278,7 +275,6 @@ public class UserRoomServiceImp implements UserRoomService {
             status.put("isJoined", false);
             status.put("isSaved", false);
         }
-
         return status;
     }
 

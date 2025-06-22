@@ -1,4 +1,4 @@
-package org.falcon.progressionservice.controller;
+package org.falcon.progressionservice.web;
 
 import org.falcon.progressionservice.client.dto.RoomDTO;
 

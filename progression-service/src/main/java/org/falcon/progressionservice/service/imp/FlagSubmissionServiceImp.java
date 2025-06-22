@@ -15,10 +15,7 @@ public class FlagSubmissionServiceImp implements FlagSubmissionService {
     private final ContentServiceClient contentServiceClient;
     private final FlagSubmissionRepository flagSubmissionRepository;
 
-    public FlagSubmissionServiceImp(
-            ContentServiceClient contentServiceClient,
-            FlagSubmissionRepository flagSubmissionRepository
-    ) {
+    public FlagSubmissionServiceImp(ContentServiceClient contentServiceClient, FlagSubmissionRepository flagSubmissionRepository) {
         this.contentServiceClient = contentServiceClient;
         this.flagSubmissionRepository = flagSubmissionRepository;
     }
@@ -31,7 +28,7 @@ public class FlagSubmissionServiceImp implements FlagSubmissionService {
     @Override
     public void deleteSubmissionsForUserAndRoom(Long userId, Long roomId) {
         // Get a room with all its details and challenges
-        RoomDTO roomDetails = contentServiceClient.getRoomById(roomId);
+        RoomDTO roomDetails = contentServiceClient.getRoomById(roomId); // this may generate an exception
         if (roomDetails == null || roomDetails.getChallenges() == null || roomDetails.getChallenges().isEmpty()) {
             // If the room has no challenges, there's nothing to delete.
             return;

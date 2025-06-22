@@ -2,6 +2,8 @@ package org.falcon.contentservice.service.imp;
 
 import org.falcon.contentservice.dto.RoomDTO;
 import org.falcon.contentservice.entity.Room;
+import org.falcon.contentservice.exception.RoomAlreadySavedException;
+import org.falcon.contentservice.exception.RoomNotFoundException;
 import org.falcon.contentservice.mapper.ChallengeMapper;
 import org.falcon.contentservice.mapper.RoomMapper;
 import org.falcon.contentservice.repository.RoomRepository;
@@ -19,11 +21,7 @@ public class RoomServiceImp implements RoomService {
     private RoomMapper roomMapper;
     private ChallengeMapper challengeMapper;
 
-    public RoomServiceImp(
-            RoomRepository roomRepository,
-            RoomMapper roomMapper,
-            ChallengeMapper challengeMapper
-    ) {
+    public RoomServiceImp(RoomRepository roomRepository, RoomMapper roomMapper, ChallengeMapper challengeMapper) {
         this.roomRepository = roomRepository;
         this.roomMapper = roomMapper;
         this.challengeMapper = challengeMapper;
@@ -50,7 +48,7 @@ public class RoomServiceImp implements RoomService {
     @Transactional(readOnly = true)
     public RoomDTO getRoomById(Long id) {
         Room room = roomRepository.findRoomWithChallengesById(id)
-                .orElseThrow(()->new RoomNotFoundException("room not found"));
+                .orElseThrow(()->new RoomNotFoundException("Room with ID " + id + " not found."));
         RoomDTO roomDTO = roomMapper.toDTO(room);
         roomDTO.setChallenges(
                 room.getChallenges().stream()
@@ -63,8 +61,12 @@ public class RoomServiceImp implements RoomService {
     @Override
     @Transactional
     public RoomDTO createRoom(RoomDTO roomDTO) {
-        if (roomDTO.getAmiId() == null || roomDTO.getAmiId().trim().isEmpty()) { throw new IllegalArgumentException("amiId cannot be null or empty");}
-        if (roomRepository.existsByAmiId(roomDTO.getAmiId())) { throw new RoomAlreadySavedException("Room with the same AMI id or task definition name already exists");}
+        if (roomDTO.getAmiId() == null || roomDTO.getAmiId().trim().isEmpty()) {
+            throw new IllegalArgumentException("amiId cannot be null or empty");
+        }
+        if (roomRepository.existsByAmiId(roomDTO.getAmiId())) {
+            throw new RoomAlreadySavedException("Room with the same AMI id or task definition name already exists");
+        }
         Room room = roomMapper.toEntity(roomDTO);
         room.setCreatedAt(LocalDateTime.now());
         Room savedRoom = roomRepository.save(room);
