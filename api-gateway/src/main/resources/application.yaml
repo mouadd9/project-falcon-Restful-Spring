@@ -1,0 +1,28 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    discovery:
+      enabled: true
+    config:
+      enabled: false
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: content_service_route # A unique string that identifies the route
+              uri: lb://CONTENT-SERVICE # The target Uniform Resource Identifier where the request will be proxied
+              predicates: # conditions that an incoming request must satisfy for the route to be considered a match
+                - Path=/api/content/**
+            - id: progression_service_route
+              uri: lb://PROGRESSION-SERVICE
+              predicates:
+                - Path=/api/progression/**
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true # Prefer registering with IP address over hostname which is often preferred in containerized environments like Docker.
