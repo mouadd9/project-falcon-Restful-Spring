@@ -8,8 +8,9 @@
         <outputRelativeToContentRoot value="true" />
         <module name="api-gateway" />
         <module name="eureka-server" />
+        <module name="config-server" />
       </profile>
-      <profile name="Annotation profile for progression-service" enabled="true">
+      <profile name="Annotation profile for instance-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -17,6 +18,7 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/unknown/lombok-unknown.jar" />
         </processorPath>
         <module name="content-service" />
+        <module name="instance-service" />
         <module name="progression-service" />
       </profile>
     </annotationProcessing>
@@ -24,8 +26,10 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="api-gateway" options="-parameters" />
+      <module name="config-server" options="-parameters" />
       <module name="content-service" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
+      <module name="instance-service" options="-parameters" />
       <module name="progression-service" options="-parameters" />
     </option>
   </component>
