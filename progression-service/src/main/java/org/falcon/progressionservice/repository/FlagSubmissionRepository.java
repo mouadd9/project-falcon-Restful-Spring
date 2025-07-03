@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
@@ -21,6 +22,8 @@ public interface FlagSubmissionRepository extends JpaRepository<FlagSubmission, 
     @Modifying
     @Query("DELETE FROM FlagSubmission fs WHERE fs.userId = :userId AND fs.challengeId IN :challengeIds")
     void deleteByUserIdAndChallengeIdIn(@Param("userId") Long userId, @Param("challengeIds") Set<Long> challengeIds);
+
+    Optional<FlagSubmission> findByUserIdAndChallengeId(Long userId, Long challengeId);
 
 
 }

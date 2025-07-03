@@ -44,7 +44,7 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
         // step 2 : check
         roomMembership.ifPresentOrElse(
                 membership -> {
-                   // this.roomService.incrementJoinedUsers(roomId);
+                    this.contentServiceClient.incrementJoinedUsers(roomId);
                     membership.setIsJoined(true); // we set isJoined to true
                     this.roomMembershipRepository.save(membership); // we persist it
                 },() -> {
@@ -56,7 +56,7 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
                     newRoomMembership.setIsSaved(false);
                     newRoomMembership.setIsJoined(true);
                     this.roomMembershipRepository.save(newRoomMembership);
-                    // this.roomService.incrementJoinedUsers(roomId);
+                    this.contentServiceClient.incrementJoinedUsers(roomId);
                 }
         );
     }
@@ -102,7 +102,7 @@ public class RoomEnrollmentServiceImp implements RoomEnrollmentService {
     public void leaveRoom(Long userId, Long roomId) {
         Optional<RoomMembership> roomMembership = this.roomMembershipRepository.findByUserIdAndRoomId(userId, roomId);
         roomMembership.ifPresentOrElse(membership -> {
-            // this.roomService.decrementJoinedUsers(roomId);
+            this.contentServiceClient.decrementJoinedUsers(roomId);
             this.flagSubmissionService.deleteSubmissionsForUserAndRoom(userId, roomId);
             // Cases
             if (membership.getIsSaved()) { // if the room is Saved

@@ -1,6 +1,7 @@
 package org.falcon.contentservice.web;
 
 import org.falcon.contentservice.dto.ErrorResponse;
+import org.falcon.contentservice.exception.ChallengeNotFoundException;
 import org.falcon.contentservice.exception.RoomAlreadySavedException;
 import org.falcon.contentservice.exception.RoomNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,18 @@ public class RoomGlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(ChallengeNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleChallengeNotFoundException(ChallengeNotFoundException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(), // 404
+                "CHALLENGE_NOT_FOUND",
+                ex.getMessage(),
+                request.getDescription(false)
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
 
     @ExceptionHandler(RoomAlreadySavedException.class)
     public ResponseEntity<ErrorResponse> handleRoomAlreadySavedException(RoomAlreadySavedException ex, WebRequest request) {

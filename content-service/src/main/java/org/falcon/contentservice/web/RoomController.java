@@ -40,4 +40,16 @@ public class RoomController {
         RoomDTO createdRoom = roomService.createRoom(roomDTO);
         return new ResponseEntity<>(createdRoom, HttpStatus.CREATED);
     }
+
+    @PutMapping("/{roomId}/increment-joined-users")
+    public ResponseEntity<Void> incrementJoinedUsers(@PathVariable("roomId") Long roomId) {
+        this.roomService.incrementJoinedUsers(roomId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{roomId}/decrement-joined-users")
+    public ResponseEntity<Void> decrementJoinedUsers(@PathVariable("roomId") Long roomId) {
+        this.roomService.decrementJoinedUsers(roomId);
+        return ResponseEntity.ok().build();
+    }
 }

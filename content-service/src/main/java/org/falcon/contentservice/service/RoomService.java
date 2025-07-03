@@ -9,6 +9,6 @@ public interface RoomService {
     List<RoomDTO> getRoomsByIds(List<Long> roomIds);
     RoomDTO getRoomById(Long id);
     RoomDTO createRoom(RoomDTO roomDTO);
-    public void incrementJoinedUsers(Long roomId);
-    public void decrementJoinedUsers(Long roomId);
+    void incrementJoinedUsers(Long roomId);
+    void decrementJoinedUsers(Long roomId);
 }
