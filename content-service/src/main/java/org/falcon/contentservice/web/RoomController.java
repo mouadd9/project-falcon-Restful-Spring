@@ -23,7 +23,7 @@ public class RoomController {
         return new ResponseEntity<>(rooms, HttpStatus.OK);
     }
 
-    @GetMapping
+    @GetMapping(params = "ids")
     public ResponseEntity<List<RoomDTO>> getRoomsByIds(@RequestParam(value = "ids") List<Long> roomIds) {
         List<RoomDTO> rooms = roomService.getRoomsByIds(roomIds);
         return new ResponseEntity<>(rooms, HttpStatus.OK);
