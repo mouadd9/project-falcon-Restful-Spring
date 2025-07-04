@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
  * 3. Better user experience with progress indicators
  */
 @RestController
-@RequestMapping("/api/instances")
+@RequestMapping("/api/instance")
 public class InstanceAsyncController {
 
     @Autowired

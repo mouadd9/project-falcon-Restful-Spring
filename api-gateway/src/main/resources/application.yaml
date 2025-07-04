@@ -20,6 +20,10 @@ spring:
               uri: lb://PROGRESSION-SERVICE
               predicates:
                 - Path=/api/progression/**
+            - id: instance_service_route
+              uri: lb://INSTANCE-SERVICE
+              predicates:
+                - Path=/api/instance/**
 eureka:
   client:
     serviceUrl:
